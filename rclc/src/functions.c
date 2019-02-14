@@ -206,6 +206,7 @@ rclc_spin_node(rclc_node_t * node)
         }
 
         void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
+        // FIXME Where is DEALLOCATE(msg)?
 
         rc = rcl_take(wait_set.subscriptions[i], msg, NULL);
         if (rc != RCL_RET_OK) {
