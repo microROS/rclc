@@ -80,12 +80,9 @@ _rclc_spin_node_exit(rcl_wait_set_t * wait_set)
 void
 rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
 {
-  // [FIXME] Make the wait_set not empty if there is no subscription
-  const size_t dummy = node->subs_s ? 0 : 1;
-
   rcl_wait_set_t wait_set = rcl_get_zero_initialized_wait_set();
   rcl_ret_t rc =
-    rcl_wait_set_init(&wait_set, node->subs_s, 0, dummy, 0, 0, rcl_get_default_allocator());
+    rcl_wait_set_init(&wait_set, node->subs_s ? node->subs_s : 1, 0, 0, 0, 0, 0, &context, rcl_get_default_allocator());
   if (rc != RCL_RET_OK) {
     PRINT_RCL_ERROR(rclc_spin_node, rcl_wait_set_init);
     return;
@@ -118,7 +115,6 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
     _rclc_spin_node_exit(&wait_set);
     return;
   }
-
   for (size_t i = 0; i < wait_set.size_of_subscriptions; ++i) {
     if (wait_set.subscriptions[i]) {
       rclc_subscription_t * sub = NULL;
@@ -136,7 +132,7 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
 
       void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
 
-      rc = rcl_take(wait_set.subscriptions[i], msg, NULL);
+      rc = rcl_take(wait_set.subscriptions[i], msg, NULL, NULL);
       if (rc != RCL_RET_OK) {
         PRINT_RCL_ERROR(rclc_spin_node, rcl_take);
         _rclc_spin_node_exit(&wait_set);
@@ -153,12 +149,9 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
 void
 rclc_spin_node(rclc_node_t * node)
 {
-  // [FIXME] Make the wait_set not empty if there is no subscription
-  const size_t dummy = node->subs_s ? 0 : 1;
-
   rcl_wait_set_t wait_set = rcl_get_zero_initialized_wait_set();
   rcl_ret_t rc =
-    rcl_wait_set_init(&wait_set, node->subs_s, 0, dummy, 0, 0, rcl_get_default_allocator());
+    rcl_wait_set_init(&wait_set, node->subs_s ? node->subs_s : 1, 0, 0, 0, 0, 0, &context, rcl_get_default_allocator());
   if (rc != RCL_RET_OK) {
     PRINT_RCL_ERROR(rclc_spin_node, rcl_wait_set_init);
     return;
@@ -205,7 +198,7 @@ rclc_spin_node(rclc_node_t * node)
 
         void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
 
-        rc = rcl_take(wait_set.subscriptions[i], msg, NULL);
+        rc = rcl_take(wait_set.subscriptions[i], msg, NULL, NULL);
         if (rc != RCL_RET_OK) {
           PRINT_RCL_ERROR(rclc_spin_node, rcl_take);
           _rclc_spin_node_exit(&wait_set);
@@ -298,7 +291,7 @@ rclc_publish(const rclc_publisher_t * publisher, const void * ros_message)
     return RCL_RET_INVALID_ARGUMENT;
   }
 
-  return rcl_publish(&publisher->rcl_publisher, ros_message);
+  return rcl_publish(&publisher->rcl_publisher, ros_message, NULL);
 }
 
 rclc_subscription_t *
