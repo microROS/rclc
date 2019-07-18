@@ -128,6 +128,7 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
       if (!sub) {
         fprintf(stderr, "[rclc_spin_node] unable to find subscription in node.\n");
         _rclc_spin_node_exit(&wait_set);
+        return;
       }
 
       void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
@@ -194,6 +195,7 @@ rclc_spin_node(rclc_node_t * node)
         if (!sub) {
           fprintf(stderr, "[rclc_spin_node] unable to find subscription in node.\n");
           _rclc_spin_node_exit(&wait_set);
+          return;
         }
 
         void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
