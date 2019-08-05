@@ -176,7 +176,7 @@ rclc_spin_node(rclc_node_t * node)
     }
 
     rc = rcl_wait(&wait_set, -1);
-    if (rc != RCL_RET_OK) {
+    if (rc != RCL_RET_OK && rc != RCL_RET_TIMEOUT) {
       PRINT_RCL_ERROR(rclc_spin_node, rcl_wait);
       _rclc_spin_node_exit(&wait_set);
       return;
@@ -201,13 +201,15 @@ rclc_spin_node(rclc_node_t * node)
         void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
 
         rc = rcl_take(wait_set.subscriptions[i], msg, NULL, NULL);
-        if (rc != RCL_RET_OK) {
+
+        if (RCL_RET_OK == rc) {
+            sub->user_callback(msg);
+        }
+        else if (RCL_RET_SUBSCRIPTION_TAKE_FAILED != rc) {
           PRINT_RCL_ERROR(rclc_spin_node, rcl_take);
           _rclc_spin_node_exit(&wait_set);
           return;
         }
-
-        sub->user_callback(msg);
       }
     }
   }
