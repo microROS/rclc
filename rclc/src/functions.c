@@ -80,12 +80,9 @@ _rclc_spin_node_exit(rcl_wait_set_t * wait_set)
 void
 rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
 {
-  // [FIXME] Make the wait_set not empty if there is no subscription
-  const size_t dummy = node->subs_s ? 0 : 1;
-
   rcl_wait_set_t wait_set = rcl_get_zero_initialized_wait_set();
   rcl_ret_t rc =
-    rcl_wait_set_init(&wait_set, node->subs_s, 0, dummy, 0, 0, rcl_get_default_allocator());
+    rcl_wait_set_init(&wait_set, node->subs_s ? node->subs_s : 1, 0, 0, 0, 0, 0, &context, rcl_get_default_allocator());
   if (rc != RCL_RET_OK) {
     PRINT_RCL_ERROR(rclc_spin_node, rcl_wait_set_init);
     return;
@@ -118,7 +115,6 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
     _rclc_spin_node_exit(&wait_set);
     return;
   }
-
   for (size_t i = 0; i < wait_set.size_of_subscriptions; ++i) {
     if (wait_set.subscriptions[i]) {
       rclc_subscription_t * sub = NULL;
@@ -132,11 +128,12 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
       if (!sub) {
         fprintf(stderr, "[rclc_spin_node] unable to find subscription in node.\n");
         _rclc_spin_node_exit(&wait_set);
+        return;
       }
 
       void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
 
-      rc = rcl_take(wait_set.subscriptions[i], msg, NULL);
+      rc = rcl_take(wait_set.subscriptions[i], msg, NULL, NULL);
       if (rc != RCL_RET_OK) {
         PRINT_RCL_ERROR(rclc_spin_node, rcl_take);
         _rclc_spin_node_exit(&wait_set);
@@ -153,12 +150,9 @@ rclc_spin_node_once(rclc_node_t * node, int64_t timeout_ms)
 void
 rclc_spin_node(rclc_node_t * node)
 {
-  // [FIXME] Make the wait_set not empty if there is no subscription
-  const size_t dummy = node->subs_s ? 0 : 1;
-
   rcl_wait_set_t wait_set = rcl_get_zero_initialized_wait_set();
   rcl_ret_t rc =
-    rcl_wait_set_init(&wait_set, node->subs_s, 0, dummy, 0, 0, rcl_get_default_allocator());
+    rcl_wait_set_init(&wait_set, node->subs_s ? node->subs_s : 1, 0, 0, 0, 0, 0, &context, rcl_get_default_allocator());
   if (rc != RCL_RET_OK) {
     PRINT_RCL_ERROR(rclc_spin_node, rcl_wait_set_init);
     return;
@@ -182,7 +176,7 @@ rclc_spin_node(rclc_node_t * node)
     }
 
     rc = rcl_wait(&wait_set, -1);
-    if (rc != RCL_RET_OK) {
+    if (rc != RCL_RET_OK && rc != RCL_RET_TIMEOUT) {
       PRINT_RCL_ERROR(rclc_spin_node, rcl_wait);
       _rclc_spin_node_exit(&wait_set);
       return;
@@ -201,18 +195,21 @@ rclc_spin_node(rclc_node_t * node)
         if (!sub) {
           fprintf(stderr, "[rclc_spin_node] unable to find subscription in node.\n");
           _rclc_spin_node_exit(&wait_set);
+          return;
         }
 
         void * msg = ZERO_ALLOCATE(sub->type_support.size_of);
 
-        rc = rcl_take(wait_set.subscriptions[i], msg, NULL);
-        if (rc != RCL_RET_OK) {
+        rc = rcl_take(wait_set.subscriptions[i], msg, NULL, NULL);
+
+        if (RCL_RET_OK == rc) {
+            sub->user_callback(msg);
+        }
+        else if (RCL_RET_SUBSCRIPTION_TAKE_FAILED != rc) {
           PRINT_RCL_ERROR(rclc_spin_node, rcl_take);
           _rclc_spin_node_exit(&wait_set);
           return;
         }
-
-        sub->user_callback(msg);
       }
     }
   }
@@ -298,7 +295,7 @@ rclc_publish(const rclc_publisher_t * publisher, const void * ros_message)
     return RCL_RET_INVALID_ARGUMENT;
   }
 
-  return rcl_publish(&publisher->rcl_publisher, ros_message);
+  return rcl_publish(&publisher->rcl_publisher, ros_message, NULL);
 }
 
 rclc_subscription_t *
