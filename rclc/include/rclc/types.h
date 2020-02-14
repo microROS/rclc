@@ -48,7 +48,9 @@ typedef struct
   } while (0)
 #endif
 
-#define UNUSED(x) (void)x;
+#ifndef UNUSED
+#define UNUSED(x) (void)(x)
+#endif
 
 #if __cplusplus
 }
