@@ -23,7 +23,7 @@ rcl_ret_t
 rclc_node_init_default(
   rcl_node_t * node,
   const char * name,
-  const char * namespace_,
+  const char * ns,
   rclc_support_t * support)
 {
   RCL_CHECK_FOR_NULL_WITH_MSG(
@@ -31,7 +31,7 @@ rclc_node_init_default(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     name, "name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    namespace_, "namespace_ is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    ns, "ns is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
     support, "support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
@@ -40,7 +40,7 @@ rclc_node_init_default(
   rc = rcl_node_init(
     node,
     name,
-    namespace_,
+    ns,
     &support->context,
     &node_ops);
   if (rc != RCL_RET_OK) {

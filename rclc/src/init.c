@@ -36,7 +36,7 @@ rclc_support_init(
   rcl_ret_t rc = RCL_RET_OK;
 
   support->init_options = rcl_get_zero_initialized_init_options();
-  rc = rcl_init_options_init(&support->init_options, (*allocator) );
+  rc = rcl_init_options_init(&(support->init_options), (*allocator) );
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_support_init, rcl_init_options_init);
     return rc;
