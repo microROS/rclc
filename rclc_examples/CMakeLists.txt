@@ -39,22 +39,22 @@ include_directories(include)
 # examples
 #################################################
 
-add_executable(example_executor src/example_executor.c)
-ament_target_dependencies(example_executor rcl rclc std_msgs)
+#add_executable(example_executor src/example_executor.c)
+#ament_target_dependencies(example_executor rcl rclc std_msgs)
 
-add_executable(example_executor_convenience src/example_executor_convenience.c)
-ament_target_dependencies(example_executor_convenience rcl rclc std_msgs)
+#add_executable(example_executor_convenience src/example_executor_convenience.c)
+#ament_target_dependencies(example_executor_convenience rcl rclc std_msgs)
 
-add_executable(example_executor_trigger src/example_executor_trigger.c)
-ament_target_dependencies(example_executor_trigger rcl rclc std_msgs)
+#add_executable(example_executor_trigger src/example_executor_trigger.c)
+#ament_target_dependencies(example_executor_trigger rcl rclc std_msgs)
 
 
-install(TARGETS
-  example_executor
-  example_executor_convenience
-  example_executor_trigger
-  DESTINATION lib/${PROJECT_NAME}
-)
+#install(TARGETS
+#  example_executor
+#  example_executor_convenience
+#  example_executor_trigger
+#  DESTINATION lib/${PROJECT_NAME}
+#)
 
 ament_package()
 
