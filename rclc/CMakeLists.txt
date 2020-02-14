@@ -35,7 +35,7 @@ find_package(std_msgs REQUIRED)
 #################################################
 # create library
 #################################################
-add_library(${PROJECT_NAME} src/init.c src/publisher.c src/subscription.c src/timer.c src/node.c src/executor_handle.c src/executor.c)
+add_library(${PROJECT_NAME} src/init.c src/publisher.c src/subscription.c src/timer.c src/node.c src/executor_handle.c src/executor.c src/rcl_eloquent.c)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC

@@ -15,7 +15,7 @@
 // limitations under the License.
 
 #include "rclc/executor.h"
-
+#include "rclc/rcl_eloquent.h"
 #include <unistd.h>
 
 #include <rcutils/time.h>
