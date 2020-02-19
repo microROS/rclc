@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
-set(CMAKE_C_CLANG_TIDY clang-tidy -checks=*)
 
-project(rclc)
+project(rclc LANGUAGES C)
+
+find_program(CLANG_TIDY clang-tidy)
+if(CLANG_TIDY)
+  set(CMAKE_CXX_CLANG_TIDY clang-tidy -checks=*)
+endif()
 
 #################################################
 # compiler settings
@@ -47,7 +51,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rcl
   rcutils
   rosidl_generator_c
-)
+  )
 
 
 #################################################

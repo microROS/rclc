@@ -1,0 +1,68 @@
+```plantUML
+@startuml
+
+class rclc.rclc_node_t {
+  rcl_node_t rcl_node;
+  rclc_subscription_t ** subs;
+  size_t subs_s;
+}
+
+class rclc.rclc_subscription_t {
+  rcl_subscription_t rcl_subscription
+  rclc_callback_t user_callback
+  rclc_message_type_support_t type_support
+  rclc_node_t * node
+}
+
+class rclc.rclc_publisher_t {
+  rcl_publisher_t rcl_publisher
+  rclc_node_t * node;
+}
+
+rclc.rclc_node_t <--> rclc.rclc_subscription_t
+rclc.rclc_publisher_t --> rclc.rclc_node_t
+
+class rcl.rcl_node_t {
+  rcl_context_t * context
+  rcl_node_impl_t * impl
+}
+
+class rcl.rcl_node_impl_t {
+  rcl_node_options_t options;
+  size_t actual_domain_id;
+  rmw_node_t * rmw_node_handle;
+  rcl_guard_condition_t * graph_guard_condition;
+  const char * logger_name;
+  const char * fq_name;
+}
+
+rclc.rclc_node_t --> rcl.rcl_node_t
+rcl.rcl_node_t *-- rcl.rcl_node_impl_t
+
+class rcl.rcl_subscription_t {
+  rcl_subscription_impl_t * imp
+}
+
+class rcl.rcl_subscription_impl_t {
+  rcl_subscription_options_t options;
+  rmw_subscription_t * rmw_handle;
+}
+
+rclc.rclc_subscription_t --> rcl.rcl_subscription_t
+rcl.rcl_subscription_t *-- rcl.rcl_subscription_impl_t
+
+class rcl.rcl_publisher_t {
+  struct rcl_publisher_impl_t * impl;
+}
+
+class rcl.rcl_publisher_impl_t {
+  rcl_publisher_options_t options;
+  rcl_context_t * context;
+  rmw_publisher_t * rmw_handle;
+}
+
+rclc.rclc_publisher_t --> rcl.rcl_publisher_t
+rcl.rcl_publisher_t *-- rcl.rcl_publisher_impl_t
+
+@enduml
+```

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # The rclc package
 
 ## Table of Contents
@@ -839,3 +840,16 @@ An example, how to use the LET Executor with rclc convenience functions is given
 `example_executor_convenience.c` in the package:
 [rclc_examples](../rclc_examples).
 -->
+=======
+General information about this repository, including legal information, build instructions and known issues/limitations, are given in [README.md](../README.md) in the repository root.
+
+
+# The rclc package
+
+This package provides a lightweight ROS 2 Client Library for the C language.
+
+
+## Architecture
+
+![Overview to major structs in rclc and rcl.](doc/types_overview.png)
+>>>>>>> dashing
