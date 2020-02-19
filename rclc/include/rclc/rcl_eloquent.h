@@ -13,27 +13,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#ifndef RCLC__RCLC_H_
-#define RCLC__RCLC_H_
+#ifndef RCL__RCL_ELOQUENT_H_
+#define RCL__RCL_ELOQUENT_H_
 
 #if __cplusplus
 extern "C"
 {
 #endif
 
-#include <stdbool.h>  // For bool
-#include <stddef.h>  // For size_t
+#include <rcl/wait.h>
+/**
+ *  RCLC-Executor built for ROS2 Version Eloquent
+ *  This is a compatability function, which is not available in ROS2 Dashing.
+ *
+ *  * <hr>
+ * Attribute          | Adherence
+ * ------------------ | -------------
+ * Allocates Memory   | No
+ * Thread-Safe        | No
+ * Uses Atomics       | No
+ * Lock-Free          | Yes
+ *
+ * \param[in] wait_set rcl wait set
+ * \return true if wait_set is initialized
+ * \return false otherwise
+ */
 
-#include "rclc/init.h"
-#include "rclc/node.h"
-#include "rclc/publisher.h"
-#include "rclc/subscription.h"
-#include "rclc/timer.h"
-#include "rclc/types.h"
+bool
+rcl_wait_set_is_valid(const rcl_wait_set_t * wait_set);
 
 #if __cplusplus
 }
 #endif
 
-#endif  // RCLC__RCLC_H_
+#endif  // RCL__RCL_ELOQUENT_H_

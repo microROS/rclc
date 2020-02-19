@@ -14,26 +14,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCLC__RCLC_H_
-#define RCLC__RCLC_H_
+#ifndef RCLC__NODE_H_
+#define RCLC__NODE_H_
 
 #if __cplusplus
 extern "C"
 {
 #endif
+#include <rcl/node.h>
+#include <rclc/types.h>
 
-#include <stdbool.h>  // For bool
-#include <stddef.h>  // For size_t
-
-#include "rclc/init.h"
-#include "rclc/node.h"
-#include "rclc/publisher.h"
-#include "rclc/subscription.h"
-#include "rclc/timer.h"
-#include "rclc/types.h"
+#include <rclc/init.h>
+/**
+ *  Creates a default RCL node.
+ *
+ *  * <hr>
+ * Attribute          | Adherence
+ * ------------------ | -------------
+ * Allocates Memory   | Yes (in this function and in RCL)
+ * Thread-Safe        | No
+ * Uses Atomics       | No
+ * Lock-Free          | Yes
+ *
+ * \param[in] name the name of the node
+ * \param[in] namespace the namespace of the node
+ * \param[in] support the rclc_support_t object
+ * \return rcl_node_t if successful
+ * \return NULL if an error occurred
+ */
+rcl_ret_t
+rclc_node_init_default(
+  rcl_node_t * node,
+  const char * name,
+  const char * namespace_,
+  rclc_support_t * support);
 
 #if __cplusplus
 }
 #endif
 
-#endif  // RCLC__RCLC_H_
+#endif  // RCLC__NODE_H_

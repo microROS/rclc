@@ -28,12 +28,4 @@
 *.x86_64
 *.hex
 
-# QT Creator Files
-
-*.files
-*.includes
-*.config
-*.creator
-*.creator.user*
-*.autosave
-CMakeLists.txt.user
+.vscode/
