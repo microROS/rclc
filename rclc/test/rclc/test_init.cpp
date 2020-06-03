@@ -55,10 +55,12 @@ TEST(Test, rclc_support_init_with_options) {
   rc = rclc_support_fini(&support);
   EXPECT_EQ(RCL_RET_OK, rc);
   // test invalid arguments
-  rc = rclc_support_init(nullptr, 0, nullptr, &allocator);
+  rc = rclc_support_init_with_options(nullptr, 0, nullptr, &init_options, &allocator);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
-  rc = rclc_support_init(&support, 0, nullptr, nullptr);
+  rc = rclc_support_init_with_options(&support, 0, nullptr, &init_options, nullptr);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
+  rc = rclc_support_init_with_options(&support, 0, nullptr, nullptr, &allocator);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
 }
