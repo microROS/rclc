@@ -60,6 +60,7 @@ TEST(Test, rclc_support_init_with_options) {
   rcutils_reset_error();
   rc = rclc_support_init_with_options(&support, 0, nullptr, &init_options, nullptr);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
+  rcutils_reset_error();
   rc = rclc_support_init_with_options(&support, 0, nullptr, nullptr, &allocator);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
