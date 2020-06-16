@@ -44,7 +44,7 @@ rclc_node_init_default(
     &support->context,
     &node_ops);
   if (rc != RCL_RET_OK) {
-    PRINT_RCLC_ERROR(rclc_node_init_default, rcl_node_init);
+    PRINT_RCLC_WARN(rclc_node_init_default, rcl_node_init);
   }
   return rc;
 }
