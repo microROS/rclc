@@ -126,7 +126,6 @@ rclc_executor_handle_get_ptr(rclc_executor_handle_t * handle)
     case GUARD_CONDITION:
       ptr = handle->gc;
       break;
-
     default:
       ptr = NULL;
   }
