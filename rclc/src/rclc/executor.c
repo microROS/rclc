@@ -246,7 +246,6 @@ rclc_executor_add_subscription(
   return ret;
 }
 
-
 rcl_ret_t
 rclc_executor_add_timer(
   rclc_executor_t * executor,
@@ -282,10 +281,94 @@ rclc_executor_add_timer(
       return ret;
     }
   }
-
   executor->info.number_of_timers++;
-
   RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a timer.");
+  return ret;
+}
+
+rcl_ret_t
+rclc_executor_add_client(
+  rclc_executor_t * executor,
+  rcl_client_t * client,
+  void * ros_request,
+  rclc_client_callback_t callback)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(client, RCL_RET_INVALID_ARGUMENT);
+  rcl_ret_t ret = RCL_RET_OK;
+  // array bound check
+  if (executor->index >= executor->max_handles) {
+    rcl_ret_t ret = RCL_RET_ERROR;
+    RCL_SET_ERROR_MSG("Buffer overflow of 'executor->handles'. Increase 'max_handles'");
+    return ret;
+  }
+
+  // assign data fields
+  executor->handles[executor->index].type = CLIENT;
+  executor->handles[executor->index].client = client;
+  executor->handles[executor->index].data = ros_request;
+  executor->handles[executor->index].client_callback = callback;
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
+  executor->handles[executor->index].initialized = true;
+
+  // increase index of handle array
+  executor->index++;
+
+  // invalidate wait_set so that in next spin_some() call the
+  // 'executor->wait_set' is updated accordingly
+  if (rcl_wait_set_is_valid(&executor->wait_set)) {
+    ret = rcl_wait_set_fini(&executor->wait_set);
+    if (RCL_RET_OK != ret) {
+      RCL_SET_ERROR_MSG("Could not reset wait_set in rclc_executor_add_client function.");
+      return ret;
+    }
+  }
+
+  executor->info.number_of_clients++;
+  RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a client.");
+  return ret;
+}
+
+rcl_ret_t
+rclc_executor_add_service(
+  rclc_executor_t * executor,
+  rcl_service_t * service,
+  void * ros_request,
+  rclc_service_callback_t callback)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(service, RCL_RET_INVALID_ARGUMENT);
+  rcl_ret_t ret = RCL_RET_OK;
+  // array bound check
+  if (executor->index >= executor->max_handles) {
+    rcl_ret_t ret = RCL_RET_ERROR;
+    RCL_SET_ERROR_MSG("Buffer overflow of 'executor->handles'. Increase 'max_handles'");
+    return ret;
+  }
+
+  // assign data fields
+  executor->handles[executor->index].type = SERVICE;
+  executor->handles[executor->index].service = service;
+  executor->handles[executor->index].data = ros_request;
+  executor->handles[executor->index].service_callback = callback;
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
+  executor->handles[executor->index].initialized = true;
+
+  // increase index of handle array
+  executor->index++;
+
+  // invalidate wait_set so that in next spin_some() call the
+  // 'executor->wait_set' is updated accordingly
+  if (rcl_wait_set_is_valid(&executor->wait_set)) {
+    ret = rcl_wait_set_fini(&executor->wait_set);
+    if (RCL_RET_OK != ret) {
+      RCL_SET_ERROR_MSG("Could not reset wait_set in rclc_executor_add_client function.");
+      return ret;
+    }
+  }
+
+  executor->info.number_of_services++;
+  RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a service.");
   return ret;
 }
 
@@ -294,7 +377,6 @@ rclc_executor_add_timer(
  * - evaluates the status bit in the wait_set for this handle
  * - if new message is available or timer is ready, assigns executor->handles[i].data_available = true
  */
-
 
 // todo refactor parameters: (rclc_executor_handle_t *, rcl_wait_set_t * wait_set)
 

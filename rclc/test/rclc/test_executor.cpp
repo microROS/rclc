@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <std_msgs/msg/int32.h>
+#include <example_interfaces/srv/add_two_ints.h>
 #include <gtest/gtest.h>
 
 #include <chrono>
@@ -230,6 +231,18 @@ void int32_callback5(const void * msgin)
     // printf("cb5 msg: %d\n", msg->data);
     _cb5_int_value = msg->data;
   }
+}
+
+void client_callback(const void * req_msg, rmw_request_id_t * id)
+{
+  UNUSED(req_msg);
+  UNUSED(id);
+}
+
+void service_callback(const void * req_msg, rmw_request_id_t * id)
+{
+  UNUSED(req_msg);
+  UNUSED(id);
 }
 
 // callback for unit test 'spin_period'
@@ -644,6 +657,79 @@ TEST_F(TestDefaultExecutor, executor_add_timer) {
   rc = rclc_executor_fini(&executor);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
 }
+
+TEST_F(TestDefaultExecutor, executor_add_client) {
+  rcl_ret_t rc;
+  rclc_executor_t executor;
+  executor = rclc_executor_get_zero_initialized_executor();
+  rc = rclc_executor_init(&executor, &this->context, 10, this->allocator_ptr);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+
+  const char * client_name = "/addtwoints";
+  rcl_client_options_t client_options = rcl_client_get_default_options();
+  rcl_client_t client = rcl_get_zero_initialized_client();
+  const rosidl_service_type_support_t * client_type_support =
+    ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts);
+  rc = rcl_client_init(&client, &this->node, client_type_support, client_name, &client_options);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  example_interfaces__srv__AddTwoInts_Response res;
+  example_interfaces__srv__AddTwoInts_Response__init(&res);
+
+  size_t number_of_clients = 0;
+  EXPECT_EQ(executor.info.number_of_clients, number_of_clients) << "should be 0";
+  EXPECT_EQ(executor.info.number_of_services, (size_t) 0) << "should be 0 ";
+
+  rc = rclc_executor_add_client(&executor, &client, &res, &client_callback);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  number_of_clients = 1;
+  EXPECT_EQ(executor.info.number_of_clients, number_of_clients) << " should be 1";
+  EXPECT_EQ(executor.info.number_of_services, (size_t) 0) << "should be 0 ";
+
+  // tear down
+  rc = rcl_client_fini(&client, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rclc_executor_fini(&executor);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+}
+
+TEST_F(TestDefaultExecutor, executor_add_service) {
+  rcl_ret_t rc;
+  rclc_executor_t executor;
+  executor = rclc_executor_get_zero_initialized_executor();
+  rc = rclc_executor_init(&executor, &this->context, 10, this->allocator_ptr);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+
+  const char * service_name = "/addtwoints";
+  rcl_service_options_t service_options = rcl_service_get_default_options();
+  rcl_service_t service = rcl_get_zero_initialized_service();
+  const rosidl_service_type_support_t * service_type_support =
+    ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts);
+  rc =
+    rcl_service_init(&service, &this->node, service_type_support, service_name, &service_options);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  example_interfaces__srv__AddTwoInts_Response req;
+  example_interfaces__srv__AddTwoInts_Response__init(&req);
+
+  size_t number_of_services = 0;
+  EXPECT_EQ(executor.info.number_of_clients, (size_t) 0);
+  EXPECT_EQ(executor.info.number_of_services, number_of_services) << "should be 0";
+
+  rc = rclc_executor_add_service(&executor, &service, &req, &service_callback);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  number_of_services = 1;
+  EXPECT_EQ(executor.info.number_of_clients, (size_t) 0);
+  EXPECT_EQ(executor.info.number_of_services, number_of_services) << " should be 1";
+
+  // tear down
+  rc = rcl_service_fini(&service, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rclc_executor_fini(&executor);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+}
+
 
 TEST_F(TestDefaultExecutor, executor_spin_some_API) {
   rcl_ret_t rc;
