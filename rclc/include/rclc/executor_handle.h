@@ -30,10 +30,10 @@ extern "C"
 typedef enum
 {
   SUBSCRIPTION,
-  GUARD_CONDITION,  // not implemented yet
   TIMER,
-  CLIENT,  // not implemented yet
-  SERVICE,  // not implemented yet
+  CLIENT,
+  SERVICE,
+  GUARD_CONDITION,
   NONE
 } rclc_executor_handle_type_t;
 
@@ -53,16 +53,15 @@ typedef struct
 {
   /// Type of handle
   rclc_executor_handle_type_t type;
-  /// When to execute callback
+  /// Invocation type determines when to execute the callback
   rclc_executor_handle_invocation_t invocation;
+  /// Pointer to the handle
   union {
-    /// Storage of subscription pointer
     rcl_subscription_t * subscription;
-    /// Storage of timer pointer
     rcl_timer_t * timer;
-    // rcl_service_t
-    // rcl_client_t
-    // rcl_guard_condition_t
+    rcl_client_t * client;
+    rcl_service_t * service;
+    rcl_guard_condition_t * gc;
   };
   /// Storage of data, which holds the message of a subscription, service, etc.
   void * data;
@@ -87,14 +86,14 @@ typedef struct
 {
   /// Total number of subscriptions
   size_t number_of_subscriptions;
-  /// Total number of guard conditions
-  size_t number_of_guard_conditions;
   /// Total number of timers
   size_t number_of_timers;
   /// Total number of clients
   size_t number_of_clients;
   /// Total number of services
   size_t number_of_services;
+  /// Total number of guard conditions
+  size_t number_of_guard_conditions;
   /// Total number of events
   size_t number_of_events;
 } rclc_executor_handle_counters_t;

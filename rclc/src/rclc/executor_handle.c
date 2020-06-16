@@ -38,8 +38,13 @@ rclc_executor_handle_init(
   RCL_CHECK_ARGUMENT_FOR_NULL(handle, RCL_RET_INVALID_ARGUMENT);
   handle->type = NONE;
   handle->invocation = ON_NEW_DATA;
+  // Note, the pointer to subscription, timer, service, client is a union
+  // and a single NULL assignment should be sufficient.
   handle->subscription = NULL;
   handle->timer = NULL;
+  handle->service = NULL;
+  handle->client = NULL;
+
   handle->data = NULL;
   handle->callback = NULL;
   handle->index = max_handles;
@@ -78,6 +83,15 @@ rclc_executor_handle_print(rclc_executor_handle_t * handle)
     case TIMER:
       typeName = "Timer";
       break;
+    case CLIENT:
+      typeName = "Client";
+      break;
+    case SERVICE:
+      typeName = "Service";
+      break;
+    case GUARD_CONDITION:
+      typeName = "GuardCond";
+      break;
     default:
       typeName = "Unknown";
   }
@@ -103,6 +117,16 @@ rclc_executor_handle_get_ptr(rclc_executor_handle_t * handle)
     case TIMER:
       ptr = handle->timer;
       break;
+    case CLIENT:
+      ptr = handle->client;
+      break;
+    case SERVICE:
+      ptr = handle->service;
+      break;
+    case GUARD_CONDITION:
+      ptr = handle->gc;
+      break;
+
     default:
       ptr = NULL;
   }
