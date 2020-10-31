@@ -30,6 +30,8 @@ extern "C"
 #include "rclc/publisher.h"
 #include "rclc/subscription.h"
 #include "rclc/timer.h"
+#include "rclc/client.h"
+#include "rclc/service.h"
 #include "rclc/types.h"
 
 #if __cplusplus
