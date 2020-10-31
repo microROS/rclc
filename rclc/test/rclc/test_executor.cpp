@@ -235,14 +235,14 @@ void int32_callback5(const void * msgin)
 
 void client_callback(const void * req_msg, rmw_request_id_t * id)
 {
-  UNUSED(req_msg);
-  UNUSED(id);
+  RCLC_UNUSED(req_msg);
+  RCLC_UNUSED(id);
 }
 
 void service_callback(const void * req_msg, rmw_request_id_t * id)
 {
-  UNUSED(req_msg);
-  UNUSED(id);
+  RCLC_UNUSED(req_msg);
+  RCLC_UNUSED(id);
 }
 
 // callback for unit test 'spin_period'
@@ -254,7 +254,7 @@ void spin_period_callback(const void * msgin)
 {
   rcutils_time_point_value_t now;
   rcl_ret_t rc;
-  RCL_UNUSED(msgin);
+  RCLC_UNUSED(msgin);
 
   rc = rcutils_system_time_now(&now);
   if (rc != RCL_RET_OK) {
@@ -283,7 +283,7 @@ uint64_t test_case_evaluate_spin_period()
 // timer callback
 void my_timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 {
-  RCL_UNUSED(last_call_time);
+  RCLC_UNUSED(last_call_time);
   // Do timer work...
   // Optionally reconfigure, cancel, or reset the timer...
   if (timer != NULL) {
