@@ -33,6 +33,7 @@ extern "C"
 #include "rclc/client.h"
 #include "rclc/service.h"
 #include "rclc/action_client.h"
+#include "rclc/action_server.h"
 #include "rclc/types.h"
 
 #if __cplusplus

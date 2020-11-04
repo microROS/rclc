@@ -35,6 +35,7 @@ typedef enum
   CLIENT,
   SERVICE,
   ACTION_CLIENT,
+  ACTION_SERVER,
   GUARD_CONDITION,
   NONE
 } rclc_executor_handle_type_t;
@@ -62,11 +63,14 @@ typedef void (* rclc_client_callback_t)(const void *, rmw_request_id_t *);
 typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *);
 
 /// Type defintion for action client callbacks function
-/// First field: request message
-/// Second field: request id
 typedef void (* rclc_action_client_goal_callback_t)(const void *, rmw_request_id_t *);
 typedef void (* rclc_action_client_feedback_callback_t)(const void *);
 typedef void (* rclc_action_client_result_callback_t)(const void *, rmw_request_id_t *);
+
+/// Type defintion for action server callbacks function
+typedef void (* rclc_action_server_goal_callback_t)(const void *, rmw_request_id_t *);
+typedef void (* rclc_action_server_feedback_callback_t)(const void *);
+typedef void (* rclc_action_server_result_callback_t)(const void *, rmw_request_id_t *);
 
 /// Container for a handle.
 typedef struct
@@ -83,17 +87,26 @@ typedef struct
     rcl_service_t * service;
     rcl_guard_condition_t * gc;
     rcl_action_client_t * action_client;
+    rcl_action_server_t * action_server;
   };
 
   /// Storage of data
   union {
     void * data;
+    // Action client storage
     struct{
       void * ros_goal_response;
       rmw_request_id_t ros_goal_response_header;
       void * ros_feedback;
       void * ros_result_response;
       rmw_request_id_t ros_result_response_header;
+    };
+    // Action server storage
+    struct{
+      void * ros_goal_request;
+      rmw_request_id_t ros_goal_request_header;
+      void * ros_result_request;
+      rmw_request_id_t ros_result_request_header;
     };
   };
   
@@ -104,10 +117,16 @@ typedef struct
       rclc_client_callback_t client_callback;
       rclc_service_callback_t service_callback;
     };
+    // Action client storage
     struct {
       rclc_action_client_goal_callback_t action_client_goal_callback;
       rclc_action_client_feedback_callback_t action_client_feedback_callback;
       rclc_action_client_result_callback_t action_client_result_callback;
+    };
+    // Action server storage
+    struct {
+      rclc_action_client_goal_callback_t action_server_goal_callback;
+      rclc_action_client_result_callback_t action_server_result_callback;
     };
   };
 
@@ -124,6 +143,7 @@ typedef struct
   /// (is set after calling rcl_take)
   union {
     bool data_available;
+    // Action client storage
     struct {
       bool feedback_available;
       bool status_available;
@@ -131,6 +151,14 @@ typedef struct
       bool cancel_response_available;
       bool result_response_available;
     };
+    // Action server storage
+    struct {
+      bool goal_request_available;
+      bool cancel_request_available;
+      bool result_request_available;
+      bool goal_expired_available;
+    };
+    
   };
   
 } rclc_executor_handle_t;
@@ -148,6 +176,8 @@ typedef struct
   size_t number_of_services;
   /// Total number of action clients
   size_t number_of_action_clients;
+    /// Total number of action servers
+  size_t number_of_action_servers;
   /// Total number of guard conditions
   size_t number_of_guard_conditions;
   /// Total number of events

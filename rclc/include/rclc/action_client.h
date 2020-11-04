@@ -13,8 +13,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef RCLC__CLIENT_H_
-#define RCLC__CLIENT_H_
+#ifndef RCLC__ACTION_CLIENT_H_
+#define RCLC__ACTION_CLIENT_H_
 
 #if __cplusplus
 extern "C"
@@ -39,7 +39,7 @@ extern "C"
  * \param[inout] client a zero_initialized rcl_action_client_t
  * \param[in] node the rcl node
  * \param[in] type_support the message data type
- * \param[in] topic_name the name of client topic
+ * \param[in] action_name the name of the action
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred
  */
@@ -54,4 +54,4 @@ rclc_action_client_init_default(
 }
 #endif
 
-#endif  // RCLC__CLIENT_H_
+#endif  // RCLC__ACTION_CLIENT_H_

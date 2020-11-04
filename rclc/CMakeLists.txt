@@ -56,6 +56,7 @@ add_library(${PROJECT_NAME}
   src/rclc/service.c
   src/rclc/timer.c
   src/rclc/action_client.c
+  src/rclc/action_server.c
   src/rclc/node.c
   src/rclc/executor_handle.c
   src/rclc/executor.c

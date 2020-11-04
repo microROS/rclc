@@ -20,15 +20,16 @@
 #include <rcutils/logging_macros.h>
 
 rcl_ret_t
-rclc_action_client_init_default(
-  rcl_action_client_t * action_client,
+rclc_action_server_init_default(
+  rcl_action_server_t * action_server,
   const rcl_node_t * node,
+  const rcl_clock_t * clock,
   const rosidl_action_type_support_t * type_support,
   const char * action_name)
 {
   
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    action_client, "action client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    action_server, "action client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
     node, "node is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
@@ -36,13 +37,14 @@ rclc_action_client_init_default(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     action_name, "action_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
-  rcl_action_client_options_t action_client_opt = rcl_action_client_get_default_options();
-  rcl_ret_t rc = rcl_action_client_init(
-    action_client,
+  rcl_action_server_options_t action_server_opt = rcl_action_server_get_default_options();
+  rcl_ret_t rc = rcl_action_server_init(
+    action_server,
     node,
+    clock,
     type_support,
     action_name,
-    &action_client_opt);
+    &action_server_opt);
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_client_init_default, rcl_client_init);
   }

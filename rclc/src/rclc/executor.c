@@ -446,6 +446,75 @@ rclc_executor_add_action_client(
   return ret;
 }
 
+
+rcl_ret_t
+rclc_executor_add_action_server(
+  rclc_executor_t * executor,
+  rcl_action_server_t * action_server,
+  void * ros_goal_request,
+  void * ros_result_request,
+  rclc_action_server_goal_callback_t goal_callback,
+  rclc_action_server_result_callback_t result_callback)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(action_server, RCL_RET_INVALID_ARGUMENT);
+  rcl_ret_t ret = RCL_RET_OK;
+  // array bound check
+  if (executor->index >= executor->max_handles) {
+    rcl_ret_t ret = RCL_RET_ERROR;
+    RCL_SET_ERROR_MSG("Buffer overflow of 'executor->handles'. Increase 'max_handles'");
+    return ret;
+  }
+
+  // assign data fields
+  executor->handles[executor->index].type = ACTION_SERVER;
+  executor->handles[executor->index].action_server = action_server;
+  executor->handles[executor->index].ros_goal_request = ros_goal_request;
+  executor->handles[executor->index].ros_result_request = ros_result_request;
+  executor->handles[executor->index].action_server_goal_callback = goal_callback;
+  executor->handles[executor->index].action_server_result_callback = result_callback;
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
+  executor->handles[executor->index].initialized = true;
+
+  executor->handles[executor->index].goal_request_available = false;
+  executor->handles[executor->index].cancel_request_available = false;
+  executor->handles[executor->index].result_request_available = false;
+  executor->handles[executor->index].goal_expired_available = false;
+
+  // increase index of handle array
+  executor->index++;
+
+  // invalidate wait_set so that in next spin_some() call the
+  // 'executor->wait_set' is updated accordingly
+  if (rcl_wait_set_is_valid(&executor->wait_set)) {
+    ret = rcl_wait_set_fini(&executor->wait_set);
+    if (RCL_RET_OK != ret) {
+      RCL_SET_ERROR_MSG("Could not reset wait_set in rclc_executor_add_client function.");
+      return ret;
+    }
+  }
+
+  size_t num_subscriptions = 0, num_guard_conditions = 0, 
+         num_timers = 0, num_clients = 0, num_services = 0;
+
+  ret = rcl_action_server_wait_set_get_num_entities(action_server, 
+                                              &num_subscriptions, 
+                                              &num_guard_conditions, 
+                                              &num_timers, 
+                                              &num_clients, 
+                                              &num_services);
+
+  executor->info.number_of_subscriptions += num_subscriptions;
+  executor->info.number_of_guard_conditions += num_guard_conditions;
+  executor->info.number_of_timers += num_timers;
+  executor->info.number_of_clients += num_clients;
+  executor->info.number_of_services += num_services;
+
+  executor->info.number_of_action_servers++;
+  RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a action client.");
+  return ret;
+}
+
 /***
  * operates on handle executor->handles[i]
  * - evaluates the status bit in the wait_set for this handle
@@ -498,6 +567,17 @@ _rclc_check_for_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_
           &handle->goal_response_available, 
           &handle->cancel_response_available, 
           &handle->result_response_available
+      );
+      break;
+
+    case ACTION_SERVER:
+      rc = rcl_action_server_wait_set_get_entities_ready(
+          wait_set, 
+          handle->action_server,
+          &handle->goal_request_available, 
+          &handle->cancel_request_available, 
+          &handle->result_request_available, 
+          &handle->goal_expired_available
       );
       break;
 
@@ -565,6 +645,22 @@ _rclc_take_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_set)
         }
       }
       break;
+    
+    case ACTION_SERVER:
+      if (handle->goal_request_available) {
+        rc = rcl_action_take_goal_request(handle->action_server, &handle->ros_goal_request_header, handle->ros_goal_request);
+        if (rc != RCL_RET_OK) {
+          //TODO (pablogs9): handle errors correctly here.
+          return rc;
+        }
+      }else if (handle->result_request_available) {
+        rc = rcl_action_take_result_request(handle->action_client, &handle->ros_result_request_header, handle->ros_result_request);
+        if (rc != RCL_RET_OK) {
+          //TODO (pablogs9): handle errors correctly here.
+          return rc;
+        }
+      }
+      break;
 
     default:
       RCUTILS_LOG_DEBUG_NAMED(
@@ -579,11 +675,22 @@ bool _rclc_check_handle_data_available(rclc_executor_handle_t * handle)
 {
   switch (handle->type) {
     case ACTION_CLIENT:
+      //TODO (pablogs9): Handle all events
       if (handle->feedback_available == true
-          || handle->status_available == true
+          // || handle->status_available == true
           || handle->goal_response_available == true
-          || handle->cancel_response_available == true
+          // || handle->cancel_response_available == true
           || handle->result_response_available == true) {
+        return true;
+      }
+      break;
+    
+    //TODO (pablogs9): Handle all events
+    case ACTION_SERVER:
+      if (handle->goal_request_available == true
+          // || handle->cancel_request_available == true
+          // || handle->goal_expired_available == true
+          || handle->result_request_available == true) {
         return true;
       }
       break;
@@ -638,6 +745,7 @@ _rclc_execute(rclc_executor_handle_t * handle)
 
       case TIMER:
         rc = rcl_timer_call(handle->timer);
+        handle->data_available = false;
         if (rc != RCL_RET_OK) {
           PRINT_RCLC_ERROR(rclc_execute, rcl_timer_call);
           return rc;
@@ -655,6 +763,16 @@ _rclc_execute(rclc_executor_handle_t * handle)
         }else if (handle->result_response_available) {
           handle->action_client_result_callback(handle->ros_result_response, &handle->ros_result_response_header);
           handle->result_response_available = false;
+        }
+        break;
+
+      case ACTION_SERVER:
+        if (handle->goal_request_available) {
+          handle->action_server_goal_callback(handle->ros_goal_request, &handle->ros_goal_request_header);
+          handle->goal_request_available = false;
+        }else if (handle->result_request_available) {
+          handle->action_server_result_callback(handle->ros_result_request, &handle->ros_result_request_header);
+          handle->result_request_available = false;
         }
         break;
     
@@ -842,6 +960,22 @@ rclc_executor_spin_some(rclc_executor_t * executor, const uint64_t timeout_ns)
         }
         break;
 
+      case ACTION_SERVER:
+        // add action server to wait_set and save index
+        rc = rcl_action_wait_set_add_action_server(
+          &executor->wait_set, executor->handles[i].action_server,
+          &executor->handles[i].index);
+        if (rc == RCL_RET_OK) {
+          RCUTILS_LOG_DEBUG_NAMED(
+            ROS_PACKAGE_NAME,
+            "Action server added to wait_set_action_servers[%ld]",
+            executor->handles[i].index);
+        } else {
+          PRINT_RCLC_ERROR(rclc_executor_spin_some, rcl_wait_set_add_subscription);
+          return rc;
+        }
+        break;
+
       default:
         RCUTILS_LOG_DEBUG_NAMED(
           ROS_PACKAGE_NAME, "Error: unknown handle type: %d",
@@ -1003,6 +1137,11 @@ bool rclc_executor_trigger_one(rclc_executor_handle_t * handles, unsigned int si
             break;
           case ACTION_CLIENT:
             if (handles[i].action_client == obj) {
+              return true;
+            }
+            break;
+          case ACTION_SERVER:
+            if (handles[i].action_server == obj) {
               return true;
             }
             break;
