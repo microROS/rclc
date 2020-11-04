@@ -14,72 +14,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rclc/client.h"
+#include "rclc/action_client.h"
 
 #include <rcl/error_handling.h>
 #include <rcutils/logging_macros.h>
 
 rcl_ret_t
-rclc_client_init_default(
-  rcl_client_t * client,
+rclc_action_client_init_default(
+  rcl_action_client_t * action_client,
   const rcl_node_t * node,
-  const rosidl_service_type_support_t * type_support,
-  const char * topic_name)
+  const rosidl_action_type_support_t * type_support,
+  const char * action_name)
 {
-  /*
+  
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    client, "client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    action_client, "action client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
     node, "node is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
     type_support, "type_support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    topic_name, "topic_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    action_name, "action_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
-  rcl_client_options_t client_opt = rcl_client_get_default_options();
-  rcl_ret_t rc = rcl_client_init(
-    client,
+  rcl_action_client_options_t action_client_opt = rcl_action_client_get_default_options();
+  rcl_ret_t rc = rcl_action_client_init(
+    action_client,
     node,
     type_support,
-    topic_name,
-    &client_opt);
+    action_name,
+    &action_client_opt);
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_client_init_default, rcl_client_init);
   }
-  */
-  rcl_ret_t rc = RCL_RET_OK;
-  return rc;
-}
-
-rcl_ret_t
-rclc_client_init_best_effort(
-  rcl_client_t * client,
-  const rcl_node_t * node,
-  const rosidl_service_type_support_t * type_support,
-  const char * topic_name)
-{
-  /*
-  RCL_CHECK_FOR_NULL_WITH_MSG(
-    client, "client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
-  RCL_CHECK_FOR_NULL_WITH_MSG(
-    node, "node is a null pointer", return RCL_RET_INVALID_ARGUMENT);
-  RCL_CHECK_FOR_NULL_WITH_MSG(
-    type_support, "type_support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
-  RCL_CHECK_FOR_NULL_WITH_MSG(
-    topic_name, "topic_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
-
-  rcl_client_options_t client_opt = rcl_client_get_default_options();
-  client_opt.qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
-  rcl_ret_t rc = rcl_client_init(
-    client,
-    node,
-    type_support,
-    topic_name,
-    &client_opt);
-  if (rc != RCL_RET_OK) {
-    PRINT_RCLC_ERROR(rclc_client_init_best_effort, rcl_client_init);
-  }
-  */
-  rcl_ret_t rc = RCL_RET_OK;
-  return rc;
 }

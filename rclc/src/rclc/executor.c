@@ -226,6 +226,7 @@ rclc_executor_add_subscription(
   executor->handles[executor->index].callback = callback;
   executor->handles[executor->index].invocation = invocation;
   executor->handles[executor->index].initialized = true;
+  executor->handles[executor->index].data_available = false;
 
   // increase index of handle array
   executor->index++;
@@ -268,6 +269,7 @@ rclc_executor_add_timer(
   executor->handles[executor->index].timer = timer;
   executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when timer elapsed
   executor->handles[executor->index].initialized = true;
+  executor->handles[executor->index].data_available = false;
 
   // increase index of handle array
   executor->index++;
@@ -372,6 +374,78 @@ rclc_executor_add_service(
   return ret;
 }
 
+rcl_ret_t
+rclc_executor_add_action_client(
+  rclc_executor_t * executor,
+  rcl_action_client_t * action_client,
+  void * ros_goal_response,
+  void * ros_feedback,
+  void * ros_result_response,
+  rclc_action_client_goal_callback_t goal_callback,
+  rclc_action_client_feedback_callback_t feedback_callback,
+  rclc_action_client_result_callback_t result_callback)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(action_client, RCL_RET_INVALID_ARGUMENT);
+  rcl_ret_t ret = RCL_RET_OK;
+  // array bound check
+  if (executor->index >= executor->max_handles) {
+    rcl_ret_t ret = RCL_RET_ERROR;
+    RCL_SET_ERROR_MSG("Buffer overflow of 'executor->handles'. Increase 'max_handles'");
+    return ret;
+  }
+
+  // assign data fields
+  executor->handles[executor->index].type = ACTION_CLIENT;
+  executor->handles[executor->index].action_client = action_client;
+  executor->handles[executor->index].ros_goal_response = ros_goal_response;
+  executor->handles[executor->index].ros_feedback = ros_feedback;
+  executor->handles[executor->index].ros_result_response = ros_result_response;
+  executor->handles[executor->index].action_client_goal_callback = goal_callback;
+  executor->handles[executor->index].action_client_feedback_callback = feedback_callback;
+  executor->handles[executor->index].action_client_result_callback = result_callback;
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
+  executor->handles[executor->index].initialized = true;
+
+  executor->handles[executor->index].feedback_available = false;
+  executor->handles[executor->index].status_available = false;
+  executor->handles[executor->index].goal_response_available = false;
+  executor->handles[executor->index].cancel_response_available = false;
+  executor->handles[executor->index].result_response_available = false;
+  // increase index of handle array
+  executor->index++;
+
+  // invalidate wait_set so that in next spin_some() call the
+  // 'executor->wait_set' is updated accordingly
+  if (rcl_wait_set_is_valid(&executor->wait_set)) {
+    ret = rcl_wait_set_fini(&executor->wait_set);
+    if (RCL_RET_OK != ret) {
+      RCL_SET_ERROR_MSG("Could not reset wait_set in rclc_executor_add_client function.");
+      return ret;
+    }
+  }
+
+  size_t num_subscriptions = 0, num_guard_conditions = 0, 
+         num_timers = 0, num_clients = 0, num_services = 0;
+
+  ret = rcl_action_client_wait_set_get_num_entities(action_client, 
+                                              &num_subscriptions, 
+                                              &num_guard_conditions, 
+                                              &num_timers, 
+                                              &num_clients, 
+                                              &num_services);
+
+  executor->info.number_of_subscriptions += num_subscriptions;
+  executor->info.number_of_guard_conditions += num_guard_conditions;
+  executor->info.number_of_timers += num_timers;
+  executor->info.number_of_clients += num_clients;
+  executor->info.number_of_services += num_services;
+
+  executor->info.number_of_action_clients++;
+  RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a action client.");
+  return ret;
+}
+
 /***
  * operates on handle executor->handles[i]
  * - evaluates the status bit in the wait_set for this handle
@@ -413,6 +487,18 @@ _rclc_check_for_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_
           return RCL_RET_ERROR;
         }
       }
+      break;
+
+    case ACTION_CLIENT:
+      rc = rcl_action_client_wait_set_get_entities_ready(
+          wait_set, 
+          handle->action_client,
+          &handle->feedback_available, 
+          &handle->status_available, 
+          &handle->goal_response_available, 
+          &handle->cancel_response_available, 
+          &handle->result_response_available
+      );
       break;
 
     default:
@@ -457,6 +543,28 @@ _rclc_take_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_set)
       // nothing to do
       // notification, that timer is ready already done in _rclc_evaluate_data_availability()
       break;
+    
+    case ACTION_CLIENT:
+      if (handle->goal_response_available) {
+        rc = rcl_action_take_goal_response(handle->action_client, &handle->ros_goal_response_header, handle->ros_goal_response);
+        if (rc != RCL_RET_OK) {
+          //TODO (pablogs9): handle errors correctly here.
+          return rc;
+        }
+      }else if (handle->feedback_available) {
+        rc = rcl_action_take_feedback(handle->action_client, handle->ros_feedback);
+        if (rc != RCL_RET_OK) {
+          //TODO (pablogs9): handle errors correctly here.
+          return rc;
+        }
+      }else if (handle->result_response_available) {
+        rc = rcl_action_take_result_response(handle->action_client, &handle->ros_result_response_header, handle->ros_result_response);
+        if (rc != RCL_RET_OK) {
+          //TODO (pablogs9): handle errors correctly here.
+          return rc;
+        }
+      }
+      break;
 
     default:
       RCUTILS_LOG_DEBUG_NAMED(
@@ -465,6 +573,29 @@ _rclc_take_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_set)
       return RCL_RET_ERROR;
   }    // switch-case
   return rc;
+}
+
+bool _rclc_check_handle_data_available(rclc_executor_handle_t * handle)
+{
+  switch (handle->type) {
+    case ACTION_CLIENT:
+      if (handle->feedback_available == true
+          || handle->status_available == true
+          || handle->goal_response_available == true
+          || handle->cancel_response_available == true
+          || handle->result_response_available == true) {
+        return true;
+      }
+      break;
+
+    default:
+      if (handle->data_available == true) {
+        return true;
+      }
+      break;
+  } // switch-case
+
+  return false;
 }
 
 /***
@@ -484,8 +615,7 @@ _rclc_execute(rclc_executor_handle_t * handle)
 
   // determine, if callback shall be called
   if (handle->invocation == ON_NEW_DATA &&
-    handle->data_available == true)
-  {
+      _rclc_check_handle_data_available(handle)){
     invoke_callback = true;
   }
 
@@ -500,6 +630,7 @@ _rclc_execute(rclc_executor_handle_t * handle)
       case SUBSCRIPTION:
         if (handle->data_available) {
           handle->callback(handle->data);
+          handle->data_available = false;
         } else {
           handle->callback(NULL);
         }
@@ -513,6 +644,20 @@ _rclc_execute(rclc_executor_handle_t * handle)
         }
         break;
 
+      case ACTION_CLIENT:
+        // TODO (pablogs9): Handle action client status
+        if (handle->goal_response_available) {
+          handle->action_client_goal_callback(handle->ros_goal_response, &handle->ros_goal_response_header);
+          handle->goal_response_available = false;
+        }else if (handle->feedback_available) {
+          handle->action_client_feedback_callback(handle->ros_feedback);
+          handle->feedback_available = false;
+        }else if (handle->result_response_available) {
+          handle->action_client_result_callback(handle->ros_result_response, &handle->ros_result_response_header);
+          handle->result_response_available = false;
+        }
+        break;
+    
       default:
         RCUTILS_LOG_DEBUG_NAMED(
           ROS_PACKAGE_NAME, "Execute callback: unknwon handle type: %d",
@@ -521,11 +666,6 @@ _rclc_execute(rclc_executor_handle_t * handle)
     }    // switch-case
   }
 
-  // corresponding callback of this handle has been called => reset data_available flag here
-  // (see also comment in _rclc_read_input_data() function)
-  if (handle->data_available == true) {
-    handle->data_available = false;
-  }
   return rc;
 }
 
@@ -685,6 +825,22 @@ rclc_executor_spin_some(rclc_executor_t * executor, const uint64_t timeout_ns)
           return rc;
         }
         break;
+      
+      case ACTION_CLIENT:
+        // add action client to wait_set and save index
+        rc = rcl_action_wait_set_add_action_client(
+          &executor->wait_set, executor->handles[i].action_client,
+          &executor->handles[i].index, NULL);
+        if (rc == RCL_RET_OK) {
+          RCUTILS_LOG_DEBUG_NAMED(
+            ROS_PACKAGE_NAME,
+            "Action client added to wait_set_action_clients[%ld]",
+            executor->handles[i].index);
+        } else {
+          PRINT_RCLC_ERROR(rclc_executor_spin_some, rcl_wait_set_add_subscription);
+          return rc;
+        }
+        break;
 
       default:
         RCUTILS_LOG_DEBUG_NAMED(
@@ -798,7 +954,7 @@ bool rclc_executor_trigger_all(rclc_executor_handle_t * handles, unsigned int si
   RCLC_UNUSED(obj);
   for (unsigned int i = 0; i < size; i++) {
     if (handles[i].initialized) {
-      if (handles[i].data_available == false) {
+      if (_rclc_check_handle_data_available(&handles[i]) == false) {
         return false;
       }
     } else {
@@ -816,7 +972,7 @@ bool rclc_executor_trigger_any(rclc_executor_handle_t * handles, unsigned int si
   // because for last index i==size this would result in out-of-bound access
   for (unsigned int i = 0; i < size; i++) {
     if (handles[i].initialized) {
-      if (handles[i].data_available == true) {
+      if (_rclc_check_handle_data_available(&handles[i]) == true) {
         return true;
       }
     } else {
@@ -833,7 +989,7 @@ bool rclc_executor_trigger_one(rclc_executor_handle_t * handles, unsigned int si
   // because for last index i==size this would result in out-of-bound access
   for (unsigned int i = 0; i < size; i++) {
     if (handles[i].initialized) {
-      if (handles[i].data_available == true) {
+      if (_rclc_check_handle_data_available(&handles[i]) == true) {
         switch (handles[i].type) {
           case SUBSCRIPTION:
             if (handles[i].subscription == obj) {
@@ -842,6 +998,11 @@ bool rclc_executor_trigger_one(rclc_executor_handle_t * handles, unsigned int si
             break;
           case TIMER:
             if (handles[i].timer == obj) {
+              return true;
+            }
+            break;
+          case ACTION_CLIENT:
+            if (handles[i].action_client == obj) {
               return true;
             }
             break;

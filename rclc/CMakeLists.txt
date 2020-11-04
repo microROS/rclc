@@ -29,6 +29,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 #################################################
 find_package(ament_cmake_ros REQUIRED)
 find_package(rcl REQUIRED)
+find_package(rcl_action REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -54,6 +55,7 @@ add_library(${PROJECT_NAME}
   src/rclc/client.c
   src/rclc/service.c
   src/rclc/timer.c
+  src/rclc/action_client.c
   src/rclc/node.c
   src/rclc/executor_handle.c
   src/rclc/executor.c
@@ -72,6 +74,7 @@ target_include_directories(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME}
   rcl
+  rcl_action
   rcutils
   rosidl_generator_c
 )

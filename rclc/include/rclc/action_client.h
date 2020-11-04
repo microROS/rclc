@@ -21,12 +21,12 @@ extern "C"
 {
 #endif
 
-#include <rcl/client.h>
+#include <rcl_action/rcl_action.h>
 #include <rcl/allocator.h>
 #include <rclc/types.h>
 
 /**
- *  Creates an rcl client.
+ *  Creates an rcl action client.
  *
  *  * <hr>
  * Attribute          | Adherence
@@ -36,32 +36,7 @@ extern "C"
  * Uses Atomics       | No
  * Lock-Free          | Yes
  *
- * \param[inout] client a zero_initialized rcl_client_t
- * \param[in] node the rcl node TODO
- * \param[in] type_support the message data type TODO
- * \param[in] topic_name the name of client topic TODO
- * \return `RCL_RET_OK` if successful
- * \return `RCL_ERROR` (or other error code) if an error has occurred
- */
-rcl_ret_t
-rclc_client_init_default(
-  rcl_client_t * client,
-  const rcl_node_t * node,
-  const rosidl_service_type_support_t * type_support,
-  const char * topic_name);
-
-/**
- *  Creates an rcl client with quality-of-service option best effort
- *
- *  * <hr>
- * Attribute          | Adherence
- * ------------------ | -------------
- * Allocates Memory   | Yes (in RCL)
- * Thread-Safe        | No
- * Uses Atomics       | No
- * Lock-Free          | Yes
- *
- * \param[inout] client a zero_initialized rcl_client_t
+ * \param[inout] client a zero_initialized rcl_action_client_t
  * \param[in] node the rcl node
  * \param[in] type_support the message data type
  * \param[in] topic_name the name of client topic
@@ -69,11 +44,11 @@ rclc_client_init_default(
  * \return `RCL_ERROR` (or other error code) if an error has occurred
  */
 rcl_ret_t
-rclc_client_init_best_effort(
-  rcl_client_t * client,
+rclc_action_client_init_default(
+  rcl_action_client_t * action_client,
   const rcl_node_t * node,
-  const rosidl_service_type_support_t * type_support,
-  const char * topic_name);
+  const rosidl_action_type_support_t * type_support,
+  const char * action_name);
 
 #if __cplusplus
 }

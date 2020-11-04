@@ -22,6 +22,7 @@ extern "C"
 #endif
 
 #include <rcl/rcl.h>
+#include <rcl_action/rcl_action.h>
 
 /// TODO (jst3si) Where is this defined? - in my build environment this variable is not set.
 // #define ROS_PACKAGE_NAME "rclc"
@@ -33,6 +34,7 @@ typedef enum
   TIMER,
   CLIENT,
   SERVICE,
+  ACTION_CLIENT,
   GUARD_CONDITION,
   NONE
 } rclc_executor_handle_type_t;
@@ -59,6 +61,13 @@ typedef void (* rclc_client_callback_t)(const void *, rmw_request_id_t *);
 /// Second field: request id
 typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *);
 
+/// Type defintion for action client callbacks function
+/// First field: request message
+/// Second field: request id
+typedef void (* rclc_action_client_goal_callback_t)(const void *, rmw_request_id_t *);
+typedef void (* rclc_action_client_feedback_callback_t)(const void *);
+typedef void (* rclc_action_client_result_callback_t)(const void *, rmw_request_id_t *);
+
 /// Container for a handle.
 typedef struct
 {
@@ -73,14 +82,35 @@ typedef struct
     rcl_client_t * client;
     rcl_service_t * service;
     rcl_guard_condition_t * gc;
+    rcl_action_client_t * action_client;
   };
-  /// Storage of data, which holds the message of a subscription, service, etc.
-  void * data;
-  /// Storage for callback for subscription
-  /// TODO(jst3si) use union
-  rclc_callback_t callback;
-  rclc_client_callback_t client_callback;
-  rclc_service_callback_t service_callback;
+
+  /// Storage of data
+  union {
+    void * data;
+    struct{
+      void * ros_goal_response;
+      rmw_request_id_t ros_goal_response_header;
+      void * ros_feedback;
+      void * ros_result_response;
+      rmw_request_id_t ros_result_response_header;
+    };
+  };
+  
+  /// Storage for callbacks
+  union {
+    rclc_callback_t callback;
+    struct {
+      rclc_client_callback_t client_callback;
+      rclc_service_callback_t service_callback;
+    };
+    struct {
+      rclc_action_client_goal_callback_t action_client_goal_callback;
+      rclc_action_client_feedback_callback_t action_client_feedback_callback;
+      rclc_action_client_result_callback_t action_client_result_callback;
+    };
+  };
+
   /// Internal variable.
   /**  Denotes the index of this handle in the correspoding wait_set entry.
   *    (wait_set_subscriptions[index], wait_set_timers[index], ...
@@ -92,7 +122,17 @@ typedef struct
   bool initialized;
   /// Interval variable. Flag, which is true, if new data is available from DDS queue
   /// (is set after calling rcl_take)
-  bool data_available;
+  union {
+    bool data_available;
+    struct {
+      bool feedback_available;
+      bool status_available;
+      bool goal_response_available;
+      bool cancel_response_available;
+      bool result_response_available;
+    };
+  };
+  
 } rclc_executor_handle_t;
 
 /// Information about total number of subscriptions, guard_conditions, timers, subscription etc.
@@ -106,6 +146,8 @@ typedef struct
   size_t number_of_clients;
   /// Total number of services
   size_t number_of_services;
+  /// Total number of action clients
+  size_t number_of_action_clients;
   /// Total number of guard conditions
   size_t number_of_guard_conditions;
   /// Total number of events
