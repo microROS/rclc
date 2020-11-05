@@ -26,7 +26,6 @@ rclc_client_init_default(
   const rosidl_service_type_support_t * type_support,
   const char * topic_name)
 {
-  /*
   RCL_CHECK_FOR_NULL_WITH_MSG(
     client, "client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
@@ -46,8 +45,6 @@ rclc_client_init_default(
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_client_init_default, rcl_client_init);
   }
-  */
-  rcl_ret_t rc = RCL_RET_OK;
   return rc;
 }
 
@@ -58,7 +55,6 @@ rclc_client_init_best_effort(
   const rosidl_service_type_support_t * type_support,
   const char * topic_name)
 {
-  /*
   RCL_CHECK_FOR_NULL_WITH_MSG(
     client, "client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
@@ -79,7 +75,5 @@ rclc_client_init_best_effort(
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_client_init_best_effort, rcl_client_init);
   }
-  */
-  rcl_ret_t rc = RCL_RET_OK;
   return rc;
 }

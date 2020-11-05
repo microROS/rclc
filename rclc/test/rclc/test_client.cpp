@@ -13,9 +13,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test_msgs/srv/basic_types.h"
+
 #include <gtest/gtest.h>
 #include <rclc/rclc.h>
+#include "test_msgs/srv/basic_types.h"
+#include "rcl/error_handling.h"
 
 TEST(Test, rclc_client_init_default) {
   rclc_support_t support;
@@ -24,8 +26,10 @@ TEST(Test, rclc_client_init_default) {
   // preliminary setup
   rcl_allocator_t allocator = rcl_get_default_allocator();
   rc = rclc_support_init(&support, 0, nullptr, &allocator);
-  const char * my_name = "test_name";
-  const char * my_namespace = "test_namespace";
+  const char * my_name = "test_client_node";
+  const char * my_namespace = "";
+  const char * topic_name = "add_two_ints";
+  const char * expected_topic_name = "/add_two_ints";
   rcl_node_t node = rcl_get_zero_initialized_node();
   rc = rclc_node_init_default(&node, my_name, my_namespace, &support);
 
@@ -33,24 +37,37 @@ TEST(Test, rclc_client_init_default) {
   rcl_client_t client = rcl_get_zero_initialized_client();
   const rosidl_service_type_support_t * type_support =
     ROSIDL_GET_SRV_TYPE_SUPPORT(test_msgs, srv, BasicTypes);
-  rc = rclc_client_init_default(&client, &node, type_support, "topic1");
+  rc = rclc_client_init_default(&client, &node, type_support, topic_name);
   EXPECT_EQ(RCL_RET_OK, rc);
-/*
+  EXPECT_EQ(strcmp(rcl_client_get_service_name(&client), expected_topic_name), 0);
+
+  // Initialize the client request.
+  test_msgs__srv__BasicTypes_Request req;
+  test_msgs__srv__BasicTypes_Request__init(&req);
+  req.uint8_value = 1;
+  req.uint32_value = 2;
+
+  // Check that there were no errors while sending the request.
+  int64_t sequence_number = 0;
+  rc = rcl_send_request(&client, &req, &sequence_number);
+  EXPECT_EQ(sequence_number, 1);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  test_msgs__srv__BasicTypes_Request__fini(&req);
+
   // tests with invalid arguments
-  rc = rclc_client_init_default(nullptr, &node, type_support, "topic1");
+  rc = rclc_client_init_default(nullptr, &node, type_support, topic_name);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
-  rc = rclc_client_init_default(&client, nullptr, type_support, "topic1");
+  rc = rclc_client_init_default(&client, nullptr, type_support, topic_name);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
-  rc = rclc_client_init_default(&client, &node, nullptr, "topic1");
+  rc = rclc_client_init_default(&client, &node, nullptr, topic_name);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
   rc = rclc_client_init_default(&client, &node, type_support, nullptr);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
 
-  */
   // clean up
   rc = rcl_client_fini(&client, &node);
   EXPECT_EQ(RCL_RET_OK, rc);
@@ -59,7 +76,7 @@ TEST(Test, rclc_client_init_default) {
   rc = rclc_support_fini(&support);
   EXPECT_EQ(RCL_RET_OK, rc);
 }
-/*
+
 TEST(Test, rclc_client_init_best_effort) {
   rclc_support_t support;
   rcl_ret_t rc;
@@ -67,8 +84,10 @@ TEST(Test, rclc_client_init_best_effort) {
   // preliminary setup
   rcl_allocator_t allocator = rcl_get_default_allocator();
   rc = rclc_support_init(&support, 0, nullptr, &allocator);
-  const char * my_name = "test_name";
-  const char * my_namespace = "test_namespace";
+  const char * my_name = "test_client_node_be";
+  const char * my_namespace = "";
+  const char * topic_name = "add_two_ints";
+  const char * expected_topic_name = "/add_two_ints";
   rcl_node_t node = rcl_get_zero_initialized_node();
   rc = rclc_node_init_default(&node, my_name, my_namespace, &support);
 
@@ -76,26 +95,43 @@ TEST(Test, rclc_client_init_best_effort) {
   rcl_client_t client = rcl_get_zero_initialized_client();
   const rosidl_service_type_support_t * type_support =
     ROSIDL_GET_SRV_TYPE_SUPPORT(test_msgs, srv, BasicTypes);
-  rc = rclc_client_init_best_effort(&client, &node, type_support, "topic1");
+  rc = rclc_client_init_best_effort(&client, &node, type_support, topic_name);
   EXPECT_EQ(RCL_RET_OK, rc);
+
+  // test client topic name
+  EXPECT_EQ(strcmp(rcl_client_get_service_name(&client), expected_topic_name), 0);
+
+  // Initialize the client request.
+  test_msgs__srv__BasicTypes_Request req;
+  test_msgs__srv__BasicTypes_Request__init(&req);
+  req.uint8_value = 1;
+  req.uint32_value = 2;
+
+  // Check that there were no errors while sending the request.
+  int64_t sequence_number = 0;
+  rc = rcl_send_request(&client, &req, &sequence_number);
+  EXPECT_EQ(sequence_number, 1);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  test_msgs__srv__BasicTypes_Request__fini(&req);
 
   // check for qos-option best effort
   const rcl_client_options_t * cli_options = rcl_client_get_options(&client);
   EXPECT_EQ(cli_options->qos.reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
 
   // tests with invalid arguments
-  rc = rclc_client_init_best_effort(nullptr, &node, type_support, "topic1");
+  rc = rclc_client_init_best_effort(nullptr, &node, type_support, topic_name);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
-  rc = rclc_client_init_best_effort(&client, nullptr, type_support, "topic1");
+  rc = rclc_client_init_best_effort(&client, nullptr, type_support, topic_name);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
-  rc = rclc_client_init_best_effort(&client, &node, nullptr, "topic1");
+  rc = rclc_client_init_best_effort(&client, &node, nullptr, topic_name);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
   rc = rclc_client_init_best_effort(&client, &node, type_support, nullptr);
   EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
   rcutils_reset_error();
+
   // clean up
   rc = rcl_client_fini(&client, &node);
   EXPECT_EQ(RCL_RET_OK, rc);
@@ -104,4 +140,3 @@ TEST(Test, rclc_client_init_best_effort) {
   rc = rclc_support_fini(&support);
   EXPECT_EQ(RCL_RET_OK, rc);
 }
-*/
