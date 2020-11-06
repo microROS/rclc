@@ -64,6 +64,13 @@ static unsigned int _cb5_int_value = 0;
 rcl_publisher_t * _pub_int_ptr;
 std_msgs__msg__Int32 * _pub_int_msg_ptr;
 
+// client/server test
+static unsigned int srv1_cnt = 0;
+static unsigned int srv1_value = 0;
+static unsigned int cli1_cnt = 0;
+static unsigned int cli1_value = 0;
+
+
 static
 void
 _results_callback_counters_init()
@@ -88,6 +95,16 @@ _results_callback_init()
 {
   _results_callback_counters_init();
   _results_callback_values_init();
+}
+
+static
+void
+_results_initialize_service_client()
+{
+  srv1_cnt = 0;
+  srv1_value = 0;
+  cli1_cnt = 0;
+  cli1_value = 0;
 }
 
 static
@@ -241,7 +258,12 @@ void client_callback(const void * req_msg, rmw_request_id_t * id)
 
 void service_callback(const void * req_msg, rmw_request_id_t * id)
 {
-  RCLC_UNUSED(req_msg);
+  srv1_cnt++;
+  printf("received service request\n");
+  const example_interfaces__srv__AddTwoInts_Request * req =
+    (const example_interfaces__srv__AddTwoInts_Request *) req_msg;
+  srv1_value = req->a;
+
   RCLC_UNUSED(id);
 }
 
@@ -1656,4 +1678,71 @@ TEST_F(TestDefaultExecutor, trigger_always) {
   EXPECT_EQ(_cb2_int_value, (unsigned int) 7) << " expected: B called";
   EXPECT_EQ(_cb1_cnt, (unsigned int) 1);
   EXPECT_EQ(_cb2_cnt, (unsigned int) 3);
+}
+
+TEST_F(TestDefaultExecutor, executor_test_service) {
+  rcl_ret_t rc;
+  rclc_executor_t executor;
+  executor = rclc_executor_get_zero_initialized_executor();
+  rc = rclc_executor_init(&executor, &this->context, 10, this->allocator_ptr);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+
+  const char * service_name = "addtwoints";
+  rcl_service_options_t service_options = rcl_service_get_default_options();
+  rcl_service_t service = rcl_get_zero_initialized_service();
+  const rosidl_service_type_support_t * service_type_support =
+    ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts);
+  rc =
+    rcl_service_init(&service, &this->node, service_type_support, service_name, &service_options);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  example_interfaces__srv__AddTwoInts_Request req;
+  example_interfaces__srv__AddTwoInts_Request__init(&req);
+
+  size_t number_of_services = 0;
+  EXPECT_EQ(executor.info.number_of_clients, (size_t) 0);
+  EXPECT_EQ(executor.info.number_of_services, number_of_services) << "should be 0";
+
+  rc = rclc_executor_add_service(&executor, &service, &req, &service_callback);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  number_of_services = 1;
+  EXPECT_EQ(executor.info.number_of_clients, (size_t) 0);
+  EXPECT_EQ(executor.info.number_of_services, number_of_services) << " should be 1";
+
+  // create client
+  // Creating service client and options
+  rcl_client_options_t client_options = rcl_client_get_default_options();
+  rcl_client_t client = rcl_get_zero_initialized_client();
+
+  // Initializing service client
+  rcl_client_init(&client, &this->node, service_type_support, service_name, &client_options);
+
+  // Creating a service request
+  int64_t seq;
+  example_interfaces__srv__AddTwoInts_Request cli_req;
+  cli_req.a = 1;
+  cli_req.b = 2;
+
+  // Sending the request
+  rcl_send_request(&client, &cli_req, &seq);
+  printf(
+    "Send request %d + %d. Seq %ld\n", static_cast<int>(cli_req.a),
+    static_cast<int>(cli_req.b), static_cast<int>(seq));
+
+  // spin executor
+  _results_initialize_service_client();
+  std::this_thread::sleep_for(std::chrono::milliseconds(250));
+  const uint64_t timeout_ns = 10000000;  // 10ms
+  rclc_executor_spin_some(&executor, timeout_ns);
+
+  // check that service callback was called
+  EXPECT_EQ(srv1_cnt, 1);
+  // check value of reqest message
+  EXPECT_EQ(srv1_value, 1);
+
+  // tear down
+  rc = rcl_service_fini(&service, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rclc_executor_fini(&executor);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
 }

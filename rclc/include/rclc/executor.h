@@ -254,7 +254,7 @@ rclc_executor_add_timer(
  *
  * \param [inout] executor pointer to initialized executor
  * \param [in] client pointer to a allocated and initialized client
- * \param [in] ros_request type-erased ptr to an allocated ROS request message
+ * \param [in] request type-erased ptr to an allocated request message
  * \param [in] callback    function pointer to a callback
  * \return `RCL_RET_OK` if add-operation was successful
  * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
@@ -264,7 +264,7 @@ rcl_ret_t
 rclc_executor_add_client(
   rclc_executor_t * executor,
   rcl_client_t * client,
-  void * ros_request,
+  void * request,
   rclc_client_callback_t callback);
 
 /**
@@ -283,7 +283,7 @@ rclc_executor_add_client(
  *
  * \param [inout] executor pointer to initialized executor
  * \param [in] service pointer to an allocated and initialized service
- * \param [in] ros_request type-erased ptr to an allocated ROS request message
+ * \param [in] request type-erased ptr to an allocated request message
  * \param [in] callback    function pointer to a callback
  * \return `RCL_RET_OK` if add-operation was successful
  * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
@@ -293,7 +293,7 @@ rcl_ret_t
 rclc_executor_add_service(
   rclc_executor_t * executor,
   rcl_service_t * service,
-  void * ros_request,
+  void * request,
   rclc_service_callback_t callback);
 
 /**
