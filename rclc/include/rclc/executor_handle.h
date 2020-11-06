@@ -50,11 +50,6 @@ typedef enum
 typedef void (* rclc_callback_t)(const void *);
 
 /// Type defintion for client callback function
-/// First field: request message
-/// Second field: request id
-typedef void (* rclc_client_callback_t)(const void *, rmw_request_id_t *);
-
-/// Type defintion for client callback function
 /// First field: response message
 /// Second field: request id
 typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *);
@@ -76,10 +71,13 @@ typedef struct
   };
   /// Storage of data, which holds the message of a subscription, service, etc.
   void * data;
+
+  /// request-id only for type service/client
+  rmw_request_id_t req_id;
+
   /// Storage for callback for subscription
   /// TODO(jst3si) use union
   rclc_callback_t callback;
-  rclc_client_callback_t client_callback;
   rclc_service_callback_t service_callback;
   /// Internal variable.
   /**  Denotes the index of this handle in the correspoding wait_set entry.

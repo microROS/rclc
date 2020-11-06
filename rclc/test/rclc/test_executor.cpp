@@ -67,8 +67,10 @@ std_msgs__msg__Int32 * _pub_int_msg_ptr;
 // client/server test
 static unsigned int srv1_cnt = 0;
 static unsigned int srv1_value = 0;
+static unsigned int srv1_id = 0;
 static unsigned int cli1_cnt = 0;
 static unsigned int cli1_value = 0;
+static unsigned int cli1_id = 0;
 
 
 static
@@ -103,8 +105,11 @@ _results_initialize_service_client()
 {
   srv1_cnt = 0;
   srv1_value = 0;
+  srv1_id = 0;
+
   cli1_cnt = 0;
   cli1_value = 0;
+  cli1_id = 0;
 }
 
 static
@@ -250,11 +255,6 @@ void int32_callback5(const void * msgin)
   }
 }
 
-void client_callback(const void * req_msg, rmw_request_id_t * id)
-{
-  RCLC_UNUSED(req_msg);
-  RCLC_UNUSED(id);
-}
 
 void service_callback(const void * req_msg, rmw_request_id_t * id)
 {
@@ -263,8 +263,17 @@ void service_callback(const void * req_msg, rmw_request_id_t * id)
   const example_interfaces__srv__AddTwoInts_Request * req =
     (const example_interfaces__srv__AddTwoInts_Request *) req_msg;
   srv1_value = req->a;
+  srv1_id = id->sequence_number;
+}
 
-  RCLC_UNUSED(id);
+void client_callback(const void * req_msg, rmw_request_id_t * id)
+{
+  cli1_cnt++;
+  printf("received response\n");
+  const example_interfaces__srv__AddTwoInts_Response * resp =
+    (const example_interfaces__srv__AddTwoInts_Response *) req_msg;
+  cli1_value = resp->sum;
+  cli1_id = id->sequence_number;
 }
 
 // callback for unit test 'spin_period'
@@ -1681,6 +1690,9 @@ TEST_F(TestDefaultExecutor, trigger_always) {
 }
 
 TEST_F(TestDefaultExecutor, executor_test_service) {
+  // This unit test tests, if a request from a client is received by the executor
+  // and the corresponding service callback is called
+  // the value of the request message is checked.
   rcl_ret_t rc;
   rclc_executor_t executor;
   executor = rclc_executor_get_zero_initialized_executor();
@@ -1729,19 +1741,94 @@ TEST_F(TestDefaultExecutor, executor_test_service) {
     "Send request %d + %d. Seq %ld\n", static_cast<int>(cli_req.a),
     static_cast<int>(cli_req.b), static_cast<int>(seq));
 
-  // spin executor
+  EXPECT_EQ(seq, (int64_t) 1); // sequence id = 1
+
+  // initialize test results
   _results_initialize_service_client();
+  EXPECT_EQ(srv1_cnt, 0);
+  EXPECT_EQ(srv1_value, 0);
+  EXPECT_EQ(srv1_id, 0);
+
+  // spin executor
   std::this_thread::sleep_for(std::chrono::milliseconds(250));
   const uint64_t timeout_ns = 10000000;  // 10ms
   rclc_executor_spin_some(&executor, timeout_ns);
 
-  // check that service callback was called
-  EXPECT_EQ(srv1_cnt, 1);
-  // check value of reqest message
-  EXPECT_EQ(srv1_value, 1);
+  EXPECT_EQ(srv1_cnt, 1);  // check that service callback was called
+  EXPECT_EQ(srv1_value, 1);  // check value of 'a' in request message
+  EXPECT_EQ(srv1_id, 1);  // check sequence id
 
   // tear down
   rc = rcl_service_fini(&service, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rcl_client_fini(&client, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rclc_executor_fini(&executor);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+}
+
+TEST_F(TestDefaultExecutor, executor_test_client) {
+  // This unit test tests, if a request from a client is received by the executor
+  // and the corresponding service callback is called
+  // the value of the request message is checked.
+  rcl_ret_t rc;
+  rclc_executor_t executor;
+  executor = rclc_executor_get_zero_initialized_executor();
+  rc = rclc_executor_init(&executor, &this->context, 10, this->allocator_ptr);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  // setup service
+  const char * service_name = "addtwoints";
+  const rosidl_service_type_support_t * service_type_support =
+    ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts);
+  rcl_service_options_t service_options = rcl_service_get_default_options();
+  rcl_service_t service = rcl_get_zero_initialized_service();
+  rc =
+    rcl_service_init(&service, &this->node, service_type_support, service_name, &service_options);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  // setup client
+  rcl_client_options_t client_options = rcl_client_get_default_options();
+  rcl_client_t client = rcl_get_zero_initialized_client();
+  rc = rcl_client_init(&client, &this->node, service_type_support, service_name, &client_options);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  // add client to executor
+  example_interfaces__srv__AddTwoInts_Response resp;
+  example_interfaces__srv__AddTwoInts_Response__init(&resp);
+  EXPECT_EQ(executor.info.number_of_clients, (size_t) 0);
+  rc = rclc_executor_add_client(&executor, &client, &resp, &client_callback);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  EXPECT_EQ(executor.info.number_of_clients, (size_t) 1);
+
+  // send response message
+  rmw_request_id_t req_id;
+  req_id.sequence_number = 13;
+  example_interfaces__srv__AddTwoInts_Response srv_resp;
+  srv_resp.sum = 3;
+  rc = rcl_send_response(&service, &req_id, &srv_resp);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  printf(
+    "Send response %d. Seq %ld\n", static_cast<int>(srv_resp.sum),
+    static_cast<int>(req_id.sequence_number));
+
+  // spin executor
+  _results_initialize_service_client();
+  EXPECT_EQ(cli1_cnt, 0);
+  EXPECT_EQ(cli1_value, 0);
+  EXPECT_EQ(cli1_id, 0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(250));
+  const uint64_t timeout_ns = 10000000;  // 10ms
+  rclc_executor_spin_some(&executor, timeout_ns);
+
+  EXPECT_EQ(cli1_cnt, 1);  // check that client callback was called
+  EXPECT_EQ(cli1_value, 3);  // check value of response message (sum=3)
+  EXPECT_EQ(cli1_id, 13);  // check sequence number
+
+  // tear down
+  rc = rcl_service_fini(&service, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rcl_client_fini(&client, &this->node);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
   rc = rclc_executor_fini(&executor);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;

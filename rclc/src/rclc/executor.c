@@ -290,8 +290,8 @@ rcl_ret_t
 rclc_executor_add_client(
   rclc_executor_t * executor,
   rcl_client_t * client,
-  void * ros_request,
-  rclc_client_callback_t callback)
+  void * request_msg,
+  rclc_service_callback_t callback)
 {
   RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_ARGUMENT_FOR_NULL(client, RCL_RET_INVALID_ARGUMENT);
@@ -306,8 +306,8 @@ rclc_executor_add_client(
   // assign data fields
   executor->handles[executor->index].type = CLIENT;
   executor->handles[executor->index].client = client;
-  executor->handles[executor->index].data = ros_request;
-  executor->handles[executor->index].client_callback = callback;
+  executor->handles[executor->index].data = request_msg;
+  executor->handles[executor->index].service_callback = callback;
   executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
   executor->handles[executor->index].initialized = true;
 
@@ -333,7 +333,7 @@ rcl_ret_t
 rclc_executor_add_service(
   rclc_executor_t * executor,
   rcl_service_t * service,
-  void * ros_request,
+  void * request_msg,
   rclc_service_callback_t callback)
 {
   RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
@@ -349,7 +349,7 @@ rclc_executor_add_service(
   // assign data fields
   executor->handles[executor->index].type = SERVICE;
   executor->handles[executor->index].service = service;
-  executor->handles[executor->index].data = ros_request;
+  executor->handles[executor->index].data = request_msg;
   executor->handles[executor->index].service_callback = callback;
   executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
   executor->handles[executor->index].initialized = true;
@@ -415,6 +415,20 @@ _rclc_check_for_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_
       }
       break;
 
+    case SERVICE:
+      if (wait_set->services[handle->index]) {
+        handle->data_available = true;
+      }
+      break;
+
+    case CLIENT:
+     printf("check-new-data client \n");  // debug(jst3si)
+      if (wait_set->clients[handle->index]) {
+        printf("check-new-data client YES \n");  // debug(jst3si)
+        handle->data_available = true;
+      }
+      break;
+
     default:
       RCUTILS_LOG_DEBUG_NAMED(
         ROS_PACKAGE_NAME, "Error:wait_set unknwon handle type: %d",
@@ -443,9 +457,9 @@ _rclc_take_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_set)
           handle->subscription, handle->data, &messageInfo,
           NULL);
         if (rc != RCL_RET_OK) {
-          // it is documented, that rcl_take might return this error with successfull rcl_wait
+          // rcl_take might return this error even with successfull rcl_wait
           if (rc != RCL_RET_SUBSCRIPTION_TAKE_FAILED) {
-            PRINT_RCLC_ERROR(rclc_read_input_data, rcl_take);
+            PRINT_RCLC_ERROR(rclc_take_new_data, rcl_take);
             RCUTILS_LOG_ERROR_NAMED(ROS_PACKAGE_NAME, "Error number: %d", rc);
           }
           return rc;
@@ -457,6 +471,38 @@ _rclc_take_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_set)
       // nothing to do
       // notification, that timer is ready already done in _rclc_evaluate_data_availability()
       break;
+
+    case SERVICE:
+      if (wait_set->services[handle->index]) {
+        rc = rcl_take_request(
+          handle->service, &handle->req_id, handle->data);
+        if (rc != RCL_RET_OK) {
+          // rcl_take_request might return this error even with successfull rcl_wait
+          if (rc != RCL_RET_SERVICE_TAKE_FAILED) {
+            PRINT_RCLC_ERROR(rclc_take_new_data, rcl_take_request);
+            RCUTILS_LOG_ERROR_NAMED(ROS_PACKAGE_NAME, "Error number: %d", rc);
+          }
+          return rc;
+        }
+      }
+      break;
+
+    case CLIENT:
+      printf("take-new-data client \n");  // debug(jst3si)
+      if (wait_set->clients[handle->index]) {
+        rc = rcl_take_response(
+          handle->service, &handle->req_id, handle->data);
+        if (rc != RCL_RET_OK) {
+          // rcl_take_response might return this error even with successfull rcl_wait
+          if (rc != RCL_RET_CLIENT_TAKE_FAILED) {
+            PRINT_RCLC_ERROR(rclc_take_new_data, rcl_take_response);
+            RCUTILS_LOG_ERROR_NAMED(ROS_PACKAGE_NAME, "Error number: %d", rc);
+          }
+          return rc;
+        }
+      }
+      break;
+
 
     default:
       RCUTILS_LOG_DEBUG_NAMED(
@@ -493,7 +539,7 @@ _rclc_execute(rclc_executor_handle_t * handle)
     invoke_callback = true;
   }
 
-  // printf("execute: handles[%d] :  %d\n", i, invoke_callback);  // debug(jst3si)
+  printf("execute handle \n");  // debug(jst3si)
   // execute callback
   if (invoke_callback) {
     switch (handle->type) {
@@ -513,12 +559,21 @@ _rclc_execute(rclc_executor_handle_t * handle)
         }
         break;
 
+      case SERVICE:
+        handle->service_callback(handle->data, &handle->req_id);
+        break;
+
+      case CLIENT:
+        printf("execute client callback \n");  // debug(jst3si)
+        handle->service_callback(handle->data, &handle->req_id);
+        break;
+
       default:
         RCUTILS_LOG_DEBUG_NAMED(
           ROS_PACKAGE_NAME, "Execute callback: unknwon handle type: %d",
           handle->type);
         return RCL_RET_ERROR;
-    }    // switch-case
+    }   // switch-case
   }
 
   // corresponding callback of this handle has been called => reset data_available flag here
@@ -682,6 +737,38 @@ rclc_executor_spin_some(rclc_executor_t * executor, const uint64_t timeout_ns)
             executor->handles[i].index);
         } else {
           PRINT_RCLC_ERROR(rclc_executor_spin_some, rcl_wait_set_add_timer);
+          return rc;
+        }
+        break;
+
+      case SERVICE:
+        // add service to wait_set and save index
+        rc = rcl_wait_set_add_service(
+          &executor->wait_set, executor->handles[i].service,
+          &executor->handles[i].index);
+        if (rc == RCL_RET_OK) {
+          RCUTILS_LOG_DEBUG_NAMED(
+            ROS_PACKAGE_NAME, "Service added to wait_set_service[%ld]",
+            executor->handles[i].index);
+        } else {
+          PRINT_RCLC_ERROR(rclc_executor_spin_some, rcl_wait_set_add_service);
+          return rc;
+        }
+        break;
+
+
+      case CLIENT:
+        printf("add client to wait-set \n");  // debug(jst3si)
+        // add client to wait_set and save index
+        rc = rcl_wait_set_add_client(
+          &executor->wait_set, executor->handles[i].client,
+          &executor->handles[i].index);
+        if (rc == RCL_RET_OK) {
+          RCUTILS_LOG_DEBUG_NAMED(
+            ROS_PACKAGE_NAME, "Client added to wait_set_client[%ld]",
+            executor->handles[i].index);
+        } else {
+          PRINT_RCLC_ERROR(rclc_executor_spin_some, rcl_wait_set_add_client);
           return rc;
         }
         break;

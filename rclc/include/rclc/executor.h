@@ -254,8 +254,8 @@ rclc_executor_add_timer(
  *
  * \param [inout] executor pointer to initialized executor
  * \param [in] client pointer to a allocated and initialized client
- * \param [in] request type-erased ptr to an allocated request message
- * \param [in] callback    function pointer to a callback
+ * \param [in] request_msg type-erased ptr to an allocated request message
+ * \param [in] callback    function pointer to a callback function
  * \return `RCL_RET_OK` if add-operation was successful
  * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
  * \return `RCL_RET_ERROR` if any other error occured
@@ -264,8 +264,8 @@ rcl_ret_t
 rclc_executor_add_client(
   rclc_executor_t * executor,
   rcl_client_t * client,
-  void * request,
-  rclc_client_callback_t callback);
+  void * request_msg,
+  rclc_service_callback_t callback);
 
 /**
  *  Adds a service to an executor.
@@ -283,8 +283,8 @@ rclc_executor_add_client(
  *
  * \param [inout] executor pointer to initialized executor
  * \param [in] service pointer to an allocated and initialized service
- * \param [in] request type-erased ptr to an allocated request message
- * \param [in] callback    function pointer to a callback
+ * \param [in] request_msg type-erased ptr to an allocated request message
+ * \param [in] callback    function pointer to a callback function
  * \return `RCL_RET_OK` if add-operation was successful
  * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
  * \return `RCL_RET_ERROR` if any other error occured
@@ -293,7 +293,7 @@ rcl_ret_t
 rclc_executor_add_service(
   rclc_executor_t * executor,
   rcl_service_t * service,
-  void * request,
+  void * request_msg,
   rclc_service_callback_t callback);
 
 /**
