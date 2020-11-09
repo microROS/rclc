@@ -290,8 +290,8 @@ rcl_ret_t
 rclc_executor_add_client(
   rclc_executor_t * executor,
   rcl_client_t * client,
-  void * request_msg,
-  rclc_service_callback_t callback)
+  void * response_msg,
+  rclc_client_callback_t callback)
 {
   RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_ARGUMENT_FOR_NULL(client, RCL_RET_INVALID_ARGUMENT);
@@ -306,8 +306,8 @@ rclc_executor_add_client(
   // assign data fields
   executor->handles[executor->index].type = CLIENT;
   executor->handles[executor->index].client = client;
-  executor->handles[executor->index].data = request_msg;
-  executor->handles[executor->index].service_callback = callback;
+  executor->handles[executor->index].data = response_msg;
+  executor->handles[executor->index].client_callback = callback;
   executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
   executor->handles[executor->index].initialized = true;
 
@@ -334,6 +334,7 @@ rclc_executor_add_service(
   rclc_executor_t * executor,
   rcl_service_t * service,
   void * request_msg,
+  void * response_msg,
   rclc_service_callback_t callback)
 {
   RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
@@ -350,8 +351,10 @@ rclc_executor_add_service(
   executor->handles[executor->index].type = SERVICE;
   executor->handles[executor->index].service = service;
   executor->handles[executor->index].data = request_msg;
+  // TODO(jst3si) new type with req and resp message in data field.
+  executor->handles[executor->index].data_response_msg = response_msg;
   executor->handles[executor->index].service_callback = callback;
-  executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // invoce when request came in
   executor->handles[executor->index].initialized = true;
 
   // increase index of handle array
@@ -422,9 +425,7 @@ _rclc_check_for_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_
       break;
 
     case CLIENT:
-     printf("check-new-data client \n");  // debug(jst3si)
       if (wait_set->clients[handle->index]) {
-        printf("check-new-data client YES \n");  // debug(jst3si)
         handle->data_available = true;
       }
       break;
@@ -488,10 +489,9 @@ _rclc_take_new_data(rclc_executor_handle_t * handle, rcl_wait_set_t * wait_set)
       break;
 
     case CLIENT:
-      printf("take-new-data client \n");  // debug(jst3si)
       if (wait_set->clients[handle->index]) {
         rc = rcl_take_response(
-          handle->service, &handle->req_id, handle->data);
+          handle->client, &handle->req_id, handle->data);
         if (rc != RCL_RET_OK) {
           // rcl_take_response might return this error even with successfull rcl_wait
           if (rc != RCL_RET_CLIENT_TAKE_FAILED) {
@@ -539,7 +539,6 @@ _rclc_execute(rclc_executor_handle_t * handle)
     invoke_callback = true;
   }
 
-  printf("execute handle \n");  // debug(jst3si)
   // execute callback
   if (invoke_callback) {
     switch (handle->type) {
@@ -560,12 +559,16 @@ _rclc_execute(rclc_executor_handle_t * handle)
         break;
 
       case SERVICE:
-        handle->service_callback(handle->data, &handle->req_id);
+        handle->service_callback(handle->data, &handle->req_id, handle->data_response_msg);
+        rc = rcl_send_response(handle->service, &handle->req_id, handle->data_response_msg);
+        if (rc != RCL_RET_OK) {
+          PRINT_RCLC_ERROR(rclc_execute, rcl_send_response);
+          return rc;
+        }
         break;
 
       case CLIENT:
-        printf("execute client callback \n");  // debug(jst3si)
-        handle->service_callback(handle->data, &handle->req_id);
+        handle->client_callback(handle->data, &handle->req_id);
         break;
 
       default:
@@ -758,7 +761,6 @@ rclc_executor_spin_some(rclc_executor_t * executor, const uint64_t timeout_ns)
 
 
       case CLIENT:
-        printf("add client to wait-set \n");  // debug(jst3si)
         // add client to wait_set and save index
         rc = rcl_wait_set_add_client(
           &executor->wait_set, executor->handles[i].client,

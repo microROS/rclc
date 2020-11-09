@@ -50,9 +50,16 @@ typedef enum
 typedef void (* rclc_callback_t)(const void *);
 
 /// Type defintion for client callback function
-/// First field: response message
-/// Second field: request id
-typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *);
+/// - request message
+/// - request id
+/// - response message
+typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *, void *);
+
+/// Type defintion for client callback function
+/// - response message
+/// - request id
+typedef void (* rclc_client_callback_t)(const void *, rmw_request_id_t *);
+
 
 /// Container for a handle.
 typedef struct
@@ -70,15 +77,30 @@ typedef struct
     rcl_guard_condition_t * gc;
   };
   /// Storage of data, which holds the message of a subscription, service, etc.
+  /// subscription: ptr to message
+  /// service: ptr to request message
   void * data;
 
-  /// request-id only for type service/client
+  /// request-id only for type service/client request/response
   rmw_request_id_t req_id;
+
+  /// only for service - ptr to response message
+  void * data_response_msg;
+
+  // TODO(jst3si) new type to be stored as data for
+  //              service/client objects
+  //              look at memory allocation for this struct!
+  // struct {
+  //   void * request_msg
+  //   void * response_msg
+  //   rmw_request_id_t req_id;
+  //} rclc_service_data_type_t
 
   /// Storage for callback for subscription
   /// TODO(jst3si) use union
   rclc_callback_t callback;
   rclc_service_callback_t service_callback;
+  rclc_client_callback_t client_callback;
   /// Internal variable.
   /**  Denotes the index of this handle in the correspoding wait_set entry.
   *    (wait_set_subscriptions[index], wait_set_timers[index], ...
