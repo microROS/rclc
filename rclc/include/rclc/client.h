@@ -64,7 +64,7 @@ rclc_client_init_default(
  * \param[inout] client a zero_initialized rcl_client_t
  * \param[in] node the rcl node
  * \param[in] type_support the message data type
- * \param[in] topic_name the name of client topic
+ * \param[in] service_name the name of client topic
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred
  */
