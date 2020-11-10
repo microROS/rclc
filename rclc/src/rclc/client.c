@@ -33,14 +33,14 @@ rclc_client_init_default(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     type_support, "type_support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    topic_name, "topic_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    service_name, "service_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
   rcl_client_options_t client_opt = rcl_client_get_default_options();
   rcl_ret_t rc = rcl_client_init(
     client,
     node,
     type_support,
-    topic_name,
+    service_name,
     &client_opt);
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_client_init_default, rcl_client_init);
@@ -62,7 +62,7 @@ rclc_client_init_best_effort(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     type_support, "type_support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    topic_name, "topic_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    service_name, "service_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
   rcl_client_options_t client_opt = rcl_client_get_default_options();
   client_opt.qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
@@ -70,7 +70,7 @@ rclc_client_init_best_effort(
     client,
     node,
     type_support,
-    topic_name,
+    service_name,
     &client_opt);
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_client_init_best_effort, rcl_client_init);

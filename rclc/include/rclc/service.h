@@ -37,8 +37,8 @@ extern "C"
  * Lock-Free          | Yes
  *
  * \param[inout] service a zero_initialized rcl_service_t
- * \param[in] node the rcl node TODO
- * \param[in] type_support the message data type TODO
+ * \param[in] node pointer to an initialized rcl node
+ * \param[in] type_support type of the request message
  * \param[in] service_name the name of service topic
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred
@@ -62,8 +62,8 @@ rclc_service_init_default(
  * Lock-Free          | Yes
  *
  * \param[inout] service a zero_initialized rcl_service_t
- * \param[in] node the rcl node
- * \param[in] type_support the message data type
+ * \param[in] node pointer to an initialized rcl node
+ * \param[in] type_support type of the request message
  * \param[in] service_name the name of service topic
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred

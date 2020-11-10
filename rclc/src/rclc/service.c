@@ -62,7 +62,7 @@ rclc_service_init_best_effort(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     type_support, "type_support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    topic_name, "topic_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    service_name, "service_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
   rcl_service_options_t service_opt = rcl_service_get_default_options();
   service_opt.qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
