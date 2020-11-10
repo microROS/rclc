@@ -48,7 +48,7 @@ rclc_client_init_default(
   rcl_client_t * client,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name);
+  const char * service_name);
 
 /**
  *  Creates an rcl client with quality-of-service option best effort
