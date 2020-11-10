@@ -1,4 +1,4 @@
-// Copyright (c) 2019 - for handle_countersrmation on the respective copyright owner
+// Copyright (c) 2020 - for handle_countersrmation on the respective copyright owner
 // see the NOTICE file and/or the repository https://github.com/ros2/rclc.
 // Copyright 2014 Open Source Robotics Foundation, Inc.
 //
