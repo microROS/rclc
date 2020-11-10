@@ -39,7 +39,7 @@ extern "C"
  * \param[inout] client a zero_initialized rcl_client_t
  * \param[in] node the rcl node TODO
  * \param[in] type_support the message data type TODO
- * \param[in] topic_name the name of client topic TODO
+ * \param[in] service_name the name of service
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred
  */
