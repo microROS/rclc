@@ -73,7 +73,7 @@ rclc_client_init_best_effort(
   rcl_client_t * client,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name);
+  const char * service_name);
 
 #if __cplusplus
 }
