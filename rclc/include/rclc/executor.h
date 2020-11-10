@@ -240,7 +240,7 @@ rclc_executor_add_timer(
 
 /**
  *  Adds a client to an executor.
- * * An error is returned, if {@link rclc_executor_t.handles} array is full.
+ * * An error is returned if {@link rclc_executor_t.handles} array is full.
  * * The total number_of_clients field of {@link rclc_executor_t.info}
  *   is incremented by one.
  *
@@ -269,7 +269,7 @@ rclc_executor_add_client(
 
 /**
  *  Adds a service to an executor.
- * * An error is returned, if {@link rclc_executor_t.handles} array is full.
+ * * An error is returned if {@link rclc_executor_t.handles} array is full.
  * * The total number_of_services field of {@link rclc_executor_t.info}
  *   is incremented by one.
  *
