@@ -721,6 +721,23 @@ TEST_F(TestDefaultExecutor, executor_add_client) {
   EXPECT_EQ(executor.info.number_of_clients, number_of_clients) << " should be 1";
   EXPECT_EQ(executor.info.number_of_services, (size_t) 0) << "should be 0 ";
 
+  // failure test cases
+  rc = rclc_executor_add_client(NULL, &client, &res, &client_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_client(&executor, NULL, &res, &client_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_client(&executor, &client, NULL, &client_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_client(&executor, &client, &res, NULL);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
   // tear down
   rc = rcl_client_fini(&client, &this->node);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
@@ -758,6 +775,27 @@ TEST_F(TestDefaultExecutor, executor_add_service) {
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
   EXPECT_EQ(executor.info.number_of_clients, (size_t) 0);
   EXPECT_EQ(executor.info.number_of_services, (size_t) 1);
+
+  // failure test cases
+  rc = rclc_executor_add_service(NULL, &service, &req, &resp, &service_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_service(&executor, NULL, &req, &resp, &service_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_service(&executor, &service, NULL, &resp, &service_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_service(&executor, &service, &req, NULL, &service_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
+
+  rc = rclc_executor_add_service(&executor, &service, &req, &resp, NULL);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc) << rcl_get_error_string().str;
+  rcutils_reset_error();
 
   // tear down
   rc = rcl_service_fini(&service, &this->node);
