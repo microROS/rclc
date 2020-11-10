@@ -42,6 +42,8 @@ void service_callback(const void * req, rmw_request_id_t * req_id, void * res){
 
 int main(int argc, const char * const * argv)
 {
+  RCLC_UNUSED(argc);
+  RCLC_UNUSED(argv);
   rcl_allocator_t allocator = rcl_get_default_allocator();
 	rclc_support_t support;
 
