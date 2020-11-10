@@ -96,11 +96,13 @@ typedef struct
   //   rmw_request_id_t req_id;
   //} rclc_service_data_type_t
 
-  /// Storage for callback for subscription
-  /// TODO(jst3si) use union
-  rclc_callback_t callback;
-  rclc_service_callback_t service_callback;
-  rclc_client_callback_t client_callback;
+  /// Storage for callbacks
+  union {
+    rclc_callback_t callback;
+    rclc_service_callback_t service_callback;
+    rclc_client_callback_t client_callback;
+  };
+
   /// Internal variable.
   /**  Denotes the index of this handle in the correspoding wait_set entry.
   *    (wait_set_subscriptions[index], wait_set_timers[index], ...
