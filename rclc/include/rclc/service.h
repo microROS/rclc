@@ -39,7 +39,7 @@ extern "C"
  * \param[inout] service a zero_initialized rcl_service_t
  * \param[in] node the rcl node TODO
  * \param[in] type_support the message data type TODO
- * \param[in] topic_name the name of service topic TODO
+ * \param[in] service_name the name of service topic
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred
  */
@@ -48,7 +48,7 @@ rclc_service_init_default(
   rcl_service_t * service,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name);
+  const char * service_name);
 
 /**
  *  Creates an rcl service with quality-of-service option best effort
@@ -64,7 +64,7 @@ rclc_service_init_default(
  * \param[inout] service a zero_initialized rcl_service_t
  * \param[in] node the rcl node
  * \param[in] type_support the message data type
- * \param[in] topic_name the name of service topic
+ * \param[in] service_name the name of service topic
  * \return `RCL_RET_OK` if successful
  * \return `RCL_ERROR` (or other error code) if an error has occurred
  */
@@ -73,7 +73,7 @@ rclc_service_init_best_effort(
   rcl_service_t * service,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name);
+  const char * service_name);
 
 #if __cplusplus
 }

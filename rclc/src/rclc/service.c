@@ -24,7 +24,7 @@ rclc_service_init_default(
   rcl_service_t * service,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name)
+  const char * service_name)
 {
   RCL_CHECK_FOR_NULL_WITH_MSG(
     service, "service is a null pointer", return RCL_RET_INVALID_ARGUMENT);
@@ -33,14 +33,14 @@ rclc_service_init_default(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     type_support, "type_support is a null pointer", return RCL_RET_INVALID_ARGUMENT);
   RCL_CHECK_FOR_NULL_WITH_MSG(
-    topic_name, "topic_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
+    service_name, "service_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
   rcl_service_options_t service_options = rcl_service_get_default_options();
   rcl_ret_t rc = rcl_service_init(
     service,
     node,
     type_support,
-    topic_name,
+    service_name,
     &service_options);
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_service_init_default, rcl_service_init);
@@ -53,7 +53,7 @@ rclc_service_init_best_effort(
   rcl_service_t * service,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name)
+  const char * service_name)
 {
   RCL_CHECK_FOR_NULL_WITH_MSG(
     service, "service is a null pointer", return RCL_RET_INVALID_ARGUMENT);
@@ -70,7 +70,7 @@ rclc_service_init_best_effort(
     service,
     node,
     type_support,
-    topic_name,
+    service_name,
     &service_opt);
   if (rc != RCL_RET_OK) {
     PRINT_RCLC_ERROR(rclc_service_init_best_effort, rcl_service_init);

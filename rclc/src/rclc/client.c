@@ -24,7 +24,7 @@ rclc_client_init_default(
   rcl_client_t * client,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name)
+  const char * service_name)
 {
   RCL_CHECK_FOR_NULL_WITH_MSG(
     client, "client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
@@ -53,7 +53,7 @@ rclc_client_init_best_effort(
   rcl_client_t * client,
   const rcl_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * topic_name)
+  const char * service_name)
 {
   RCL_CHECK_FOR_NULL_WITH_MSG(
     client, "client is a null pointer", return RCL_RET_INVALID_ARGUMENT);
