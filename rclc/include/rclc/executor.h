@@ -298,6 +298,34 @@ rclc_executor_add_service(
   void * response_msg,
   rclc_service_callback_t callback);
 
+
+/**
+ *  Adds a guard_condition to an executor.
+ * * An error is returned if {@link rclc_executor_t.handles} array is full.
+ * * The total number_of_guard_conditions field of {@link rclc_executor_t.info}
+ *   is incremented by one.
+ *
+ * <hr>
+ * Attribute          | Adherence
+ * ------------------ | -------------
+ * Allocates Memory   | No
+ * Thread-Safe        | No
+ * Uses Atomics       | No
+ * Lock-Free          | Yes
+ *
+ * \param [inout] executor pointer to initialized executor
+ * \param [in] gc pointer to an allocated and initialized guard_condition
+ * \param [in] callback    function pointer to a callback function
+ * \return `RCL_RET_OK` if add-operation was successful
+ * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
+ * \return `RCL_RET_ERROR` if any other error occured
+ */
+rcl_ret_t
+rclc_executor_add_guard_condition(
+  rclc_executor_t * executor,
+  rcl_guard_condition_t * gc,
+  rclc_gc_callback_t callback);
+
 /**
  *  The spin-some function checks one-time for new data from the DDS-queue.
  * * the timeout is defined in {@link rclc_executor_t.timeout_ns} and can

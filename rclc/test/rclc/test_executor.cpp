@@ -72,6 +72,9 @@ static unsigned int cli1_cnt = 0;
 static unsigned int cli1_value = 0;
 static unsigned int cli1_id = 0;
 
+// guard condition test
+static unsigned int gc1_cnt = 0;
+
 
 static
 void
@@ -278,6 +281,12 @@ void client_callback(const void * req_msg, rmw_request_id_t * id)
     (const example_interfaces__srv__AddTwoInts_Response *) req_msg;
   cli1_value = resp->sum;
   cli1_id = id->sequence_number;
+}
+
+void gc_callback()
+{
+  gc1_cnt++;
+  printf("guard_condition signaled\n");
 }
 
 // callback for unit test 'spin_period'
@@ -1823,6 +1832,61 @@ TEST_F(TestDefaultExecutor, executor_test_service) {
   rc = rcl_service_fini(&service, &this->node);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
   rc = rcl_client_fini(&client, &this->node);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  rc = rclc_executor_fini(&executor);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+}
+
+TEST_F(TestDefaultExecutor, executor_test_guard_condition) {
+  // Test guard_condition.
+  rcl_ret_t rc;
+  rclc_executor_t executor;
+  executor = rclc_executor_get_zero_initialized_executor();
+  rc = rclc_executor_init(&executor, &this->context, 1, this->allocator_ptr);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  // initialize guard condition
+  rcl_guard_condition_t guard_cond = rcl_get_zero_initialized_guard_condition();
+  rc = rcl_guard_condition_init(
+    &guard_cond, &this->context, rcl_guard_condition_get_default_options());
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  // add gc to executor - with invalid arguments
+  rc = rclc_executor_add_guard_condition(NULL, &guard_cond, &gc_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
+  rcutils_reset_error();
+  EXPECT_EQ(executor.info.number_of_guard_conditions, (size_t) 0);
+
+  rc = rclc_executor_add_guard_condition(&executor, NULL, &gc_callback);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
+  rcutils_reset_error();
+  EXPECT_EQ(executor.info.number_of_guard_conditions, (size_t) 0);
+
+  rc = rclc_executor_add_guard_condition(&executor, &guard_cond, NULL);
+  EXPECT_EQ(RCL_RET_INVALID_ARGUMENT, rc);
+  rcutils_reset_error();
+  EXPECT_EQ(executor.info.number_of_guard_conditions, (size_t) 0);
+
+  // add gc to executor - valid arguments
+  EXPECT_EQ(executor.info.number_of_guard_conditions, (size_t) 0);
+  rc = rclc_executor_add_guard_condition(&executor, &guard_cond, &gc_callback);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+  EXPECT_EQ(executor.info.number_of_guard_conditions, (size_t) 1);
+
+  // trigger guard condition
+  rc = rcl_trigger_guard_condition(&guard_cond);
+  EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
+
+  // spin once - expect that guard condition callback is called
+  gc1_cnt = 0;
+  EXPECT_EQ(gc1_cnt, (unsigned int) 0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(250));
+  const uint64_t timeout_ns = 100000000;  // 100ms
+  rclc_executor_spin_some(&executor, timeout_ns);
+  EXPECT_EQ(gc1_cnt, (unsigned int) 1);
+
+  // tear down
+  rc = rcl_guard_condition_fini(&guard_cond);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;
   rc = rclc_executor_fini(&executor);
   EXPECT_EQ(RCL_RET_OK, rc) << rcl_get_error_string().str;

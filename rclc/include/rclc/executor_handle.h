@@ -60,6 +60,9 @@ typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *, void 
 /// - request id
 typedef void (* rclc_client_callback_t)(const void *, rmw_request_id_t *);
 
+/// Type defintion for guard condition callback function.
+typedef void (* rclc_gc_callback_t)();
+
 
 /// Container for a handle.
 typedef struct
@@ -101,6 +104,7 @@ typedef struct
     rclc_callback_t callback;
     rclc_service_callback_t service_callback;
     rclc_client_callback_t client_callback;
+    rclc_gc_callback_t gc_callback;
   };
 
   /// Internal variable.
