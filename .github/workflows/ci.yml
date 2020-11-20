@@ -21,7 +21,7 @@ jobs:
             git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
       
         - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build 
+          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
 
         - name: Test
           run: | 
@@ -43,7 +43,7 @@ jobs:
             git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
       
         - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build 
+          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
 
         - name: Test
           run: | 
@@ -65,7 +65,7 @@ jobs:
             git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
       
         - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build 
+          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
 
         - name: Test
           run: | 
@@ -87,7 +87,7 @@ jobs:
             git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
       
         - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build 
+          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
 
         - name: Test
           run: | 
