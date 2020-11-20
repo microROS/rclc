@@ -25,6 +25,6 @@ jobs:
         required-ros-distributions: ${{ matrix.ros_distribution }}
     - uses : ros-tooling/action-ros-ci@0.1.0
       with:
-        package-name: rclc
+        package-name: rclc, rclc_examples
         vcs-repo-file-url: ""
         target-ros2-distro: ${{ matrix.ros_distribution }}
