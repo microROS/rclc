@@ -10,7 +10,7 @@ jobs:
     rolling:
         runs-on: ubuntu-20.04
         container: ros:foxy
-    
+
         steps:
         - uses: actions/checkout@v2
           with:
@@ -18,14 +18,16 @@ jobs:
 
         - name: Download dependencies
           run: |
+            apt update
+            apt install -y ros-rolling-desktop 
             git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
       
         - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
+          run: . /opt/ros/rolling/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
 
         - name: Test
           run: | 
-            . /opt/ros/$ROS_DISTRO/setup.sh && . install/local_setup.sh 
+            . /opt/ros/rolling/setup.sh && . install/local_setup.sh 
             colcon test
             colcon test-result
 
