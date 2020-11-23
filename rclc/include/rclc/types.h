@@ -49,6 +49,9 @@ typedef struct
   } while (0)
 #endif
 
+/**
+ * macro to print warnings
+ */
 #ifndef PRINT_RCLC_WARN
 #define PRINT_RCLC_WARN(rclc, rcl) \
   do { \
