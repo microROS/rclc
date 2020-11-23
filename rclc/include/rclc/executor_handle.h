@@ -53,30 +53,30 @@ typedef enum
 } rclc_executor_handle_callback_type_t;
 
 
-/// Type defintion for callback function.
+/// Type definition for callback function.
 typedef void (* rclc_callback_t)(const void *);
 
-/// Type defintion for client callback function
+/// Type definition for client callback function
 /// - request message
 /// - response message
 typedef void (* rclc_service_callback_t)(const void *, void *);
 
-/// Type defintion for client callback function
+/// Type definition for client callback function
 /// - request message
 /// - request id
 /// - response message
 typedef void (* rclc_service_callback_with_request_id_t)(const void *, rmw_request_id_t *, void *);
 
-/// Type defintion for client callback function
+/// Type definition for client callback function
 /// - response message
 typedef void (* rclc_client_callback_t)(const void *);
 
-/// Type defintion for client callback function
+/// Type definition for client callback function
 /// - response message
 /// - request id
 typedef void (* rclc_client_callback_with_request_id_t)(const void *, rmw_request_id_t *);
 
-/// Type defintion for guard condition callback function.
+/// Type definition for guard condition callback function.
 typedef void (* rclc_gc_callback_t)();
 
 

@@ -45,7 +45,7 @@ typedef enum
   LET
 } rclc_executor_semantics_t;
 
-/// Type defintion for trigger function. With the parameters:
+/// Type definition for trigger function. With the parameters:
 /// - array of executor_handles
 /// - size of array
 /// - application specific struct used in the trigger function
