@@ -35,6 +35,7 @@ rclc_service_init_default(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     service_name, "service_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
+  (*service) = rcl_get_zero_initialized_service();
   rcl_service_options_t service_options = rcl_service_get_default_options();
   rcl_ret_t rc = rcl_service_init(
     service,
@@ -64,6 +65,7 @@ rclc_service_init_best_effort(
   RCL_CHECK_FOR_NULL_WITH_MSG(
     service_name, "service_name is a null pointer", return RCL_RET_INVALID_ARGUMENT);
 
+  (*service) = rcl_get_zero_initialized_service();
   rcl_service_options_t service_opt = rcl_service_get_default_options();
   service_opt.qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
   rcl_ret_t rc = rcl_service_init(
