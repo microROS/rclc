@@ -29,13 +29,12 @@
 example_interfaces__srv__AddTwoInts_Request req;
 example_interfaces__srv__AddTwoInts_Response res;
 
-void client_callback(const void * msg, rmw_request_id_t * req_id)
+void client_callback(const void * msg)
 {
   example_interfaces__srv__AddTwoInts_Response * msgin =
     (example_interfaces__srv__AddTwoInts_Response *) msg;
   printf(
-    "Received service response %ld + %ld = %ld. Seq %ld\n", req.a, req.b, msgin->sum,
-    req_id->sequence_number);
+    "Received service response %ld + %ld = %ld.\n", req.a, req.b, msgin->sum);
 }
 
 int main(int argc, const char * const * argv)
@@ -75,7 +74,7 @@ int main(int argc, const char * const * argv)
   sleep(2);   // Sleep a while to ensure DDS matching before sending request
 
   RCCHECK(rcl_send_request(&client, &req, &seq))
-  printf("Send service request %ld + %ld. Seq %ld\n", req.a, req.b, seq);
+  printf("Send service request %ld + %ld.\n", req.a, req.b);
 
   rclc_executor_spin(&executor);
 

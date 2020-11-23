@@ -54,10 +54,12 @@ rclc_executor_handle_init(
   //   handle->service_callback == NULL;
   //   handle->client_callback == NULL;
   //   handle->gc_callback == NULL
+  //   ...
 
   handle->index = max_handles;
   handle->initialized = false;
   handle->data_available = false;
+  handle->callback_type = CB_UNDEFINED;
   return RCL_RET_OK;
 }
 

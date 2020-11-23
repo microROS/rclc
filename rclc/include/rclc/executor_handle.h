@@ -45,20 +45,36 @@ typedef enum
   ALWAYS
 } rclc_executor_handle_invocation_t;
 
+typedef enum
+{
+  CB_UNDEFINED,
+  CB_WITHOUT_REQUEST_ID,
+  CB_WITH_REQUEST_ID
+} rclc_executor_handle_callback_type_t;
+
 
 /// Type defintion for callback function.
 typedef void (* rclc_callback_t)(const void *);
 
 /// Type defintion for client callback function
 /// - request message
+/// - response message
+typedef void (* rclc_service_callback_t)(const void *, void *);
+
+/// Type defintion for client callback function
+/// - request message
 /// - request id
 /// - response message
-typedef void (* rclc_service_callback_t)(const void *, rmw_request_id_t *, void *);
+typedef void (* rclc_service_callback_with_request_id_t)(const void *, rmw_request_id_t *, void *);
+
+/// Type defintion for client callback function
+/// - response message
+typedef void (* rclc_client_callback_t)(const void *);
 
 /// Type defintion for client callback function
 /// - response message
 /// - request id
-typedef void (* rclc_client_callback_t)(const void *, rmw_request_id_t *);
+typedef void (* rclc_client_callback_with_request_id_t)(const void *, rmw_request_id_t *);
 
 /// Type defintion for guard condition callback function.
 typedef void (* rclc_gc_callback_t)();
@@ -103,7 +119,9 @@ typedef struct
   union {
     rclc_callback_t callback;
     rclc_service_callback_t service_callback;
+    rclc_service_callback_with_request_id_t service_callback_with_reqid;
     rclc_client_callback_t client_callback;
+    rclc_client_callback_with_request_id_t client_callback_with_reqid;
     rclc_gc_callback_t gc_callback;
   };
 
@@ -119,6 +137,8 @@ typedef struct
   /// Interval variable. Flag, which is true, if new data is available from DDS queue
   /// (is set after calling rcl_take)
   bool data_available;
+  /// callback type for service/client
+  rclc_executor_handle_callback_type_t callback_type;
 } rclc_executor_handle_t;
 
 /// Information about total number of subscriptions, guard_conditions, timers, subscription etc.

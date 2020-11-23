@@ -310,6 +310,54 @@ rclc_executor_add_client(
   executor->handles[executor->index].client = client;
   executor->handles[executor->index].data = response_msg;
   executor->handles[executor->index].client_callback = callback;
+  executor->handles[executor->index].callback_type = CB_WITHOUT_REQUEST_ID;
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
+  executor->handles[executor->index].initialized = true;
+
+
+  // increase index of handle array
+  executor->index++;
+
+  // invalidate wait_set so that in next spin_some() call the
+  // 'executor->wait_set' is updated accordingly
+  if (rcl_wait_set_is_valid(&executor->wait_set)) {
+    ret = rcl_wait_set_fini(&executor->wait_set);
+    if (RCL_RET_OK != ret) {
+      RCL_SET_ERROR_MSG("Could not reset wait_set in rclc_executor_add_client function.");
+      return ret;
+    }
+  }
+
+  executor->info.number_of_clients++;
+  RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a client.");
+  return ret;
+}
+
+rcl_ret_t
+rclc_executor_add_client_with_request_id(
+  rclc_executor_t * executor,
+  rcl_client_t * client,
+  void * response_msg,
+  rclc_client_callback_with_request_id_t callback)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(client, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(response_msg, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(callback, RCL_RET_INVALID_ARGUMENT);
+  rcl_ret_t ret = RCL_RET_OK;
+  // array bound check
+  if (executor->index >= executor->max_handles) {
+    rcl_ret_t ret = RCL_RET_ERROR;
+    RCL_SET_ERROR_MSG("Buffer overflow of 'executor->handles'. Increase 'max_handles'");
+    return ret;
+  }
+
+  // assign data fields
+  executor->handles[executor->index].type = CLIENT;
+  executor->handles[executor->index].client = client;
+  executor->handles[executor->index].data = response_msg;
+  executor->handles[executor->index].client_callback_with_reqid = callback;
+  executor->handles[executor->index].callback_type = CB_WITH_REQUEST_ID;
   executor->handles[executor->index].invocation = ON_NEW_DATA;  // i.e. when request came in
   executor->handles[executor->index].initialized = true;
 
@@ -359,6 +407,7 @@ rclc_executor_add_service(
   // TODO(jst3si) new type with req and resp message in data field.
   executor->handles[executor->index].data_response_msg = response_msg;
   executor->handles[executor->index].service_callback = callback;
+  executor->handles[executor->index].callback_type = CB_WITHOUT_REQUEST_ID;
   executor->handles[executor->index].invocation = ON_NEW_DATA;  // invoce when request came in
   executor->handles[executor->index].initialized = true;
 
@@ -380,6 +429,55 @@ rclc_executor_add_service(
   return ret;
 }
 
+rcl_ret_t
+rclc_executor_add_service_with_request_id(
+  rclc_executor_t * executor,
+  rcl_service_t * service,
+  void * request_msg,
+  void * response_msg,
+  rclc_service_callback_with_request_id_t callback)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(executor, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(service, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(request_msg, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(response_msg, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(callback, RCL_RET_INVALID_ARGUMENT);
+  rcl_ret_t ret = RCL_RET_OK;
+  // array bound check
+  if (executor->index >= executor->max_handles) {
+    rcl_ret_t ret = RCL_RET_ERROR;
+    RCL_SET_ERROR_MSG("Buffer overflow of 'executor->handles'. Increase 'max_handles'");
+    return ret;
+  }
+
+  // assign data fields
+  executor->handles[executor->index].type = SERVICE;
+  executor->handles[executor->index].service = service;
+  executor->handles[executor->index].data = request_msg;
+  // TODO(jst3si) new type with req and resp message in data field.
+  executor->handles[executor->index].data_response_msg = response_msg;
+  executor->handles[executor->index].service_callback_with_reqid = callback;
+  executor->handles[executor->index].callback_type = CB_WITH_REQUEST_ID;
+  executor->handles[executor->index].invocation = ON_NEW_DATA;  // invoce when request came in
+  executor->handles[executor->index].initialized = true;
+
+  // increase index of handle array
+  executor->index++;
+
+  // invalidate wait_set so that in next spin_some() call the
+  // 'executor->wait_set' is updated accordingly
+  if (rcl_wait_set_is_valid(&executor->wait_set)) {
+    ret = rcl_wait_set_fini(&executor->wait_set);
+    if (RCL_RET_OK != ret) {
+      RCL_SET_ERROR_MSG("Could not reset wait_set in rclc_executor_add_service function.");
+      return ret;
+    }
+  }
+
+  executor->info.number_of_services++;
+  RCUTILS_LOG_DEBUG_NAMED(ROS_PACKAGE_NAME, "Added a service.");
+  return ret;
+}
 
 rcl_ret_t
 rclc_executor_add_guard_condition(
@@ -615,7 +713,13 @@ _rclc_execute(rclc_executor_handle_t * handle)
         break;
 
       case SERVICE:
-        handle->service_callback(handle->data, &handle->req_id, handle->data_response_msg);
+        if (handle->callback_type == CB_WITHOUT_REQUEST_ID) {
+          handle->service_callback(handle->data, handle->data_response_msg);
+        } else if (handle->callback_type == CB_WITH_REQUEST_ID) {
+          handle->service_callback_with_reqid(
+            handle->data, &handle->req_id,
+            handle->data_response_msg);
+        }
         rc = rcl_send_response(handle->service, &handle->req_id, handle->data_response_msg);
         if (rc != RCL_RET_OK) {
           PRINT_RCLC_ERROR(rclc_execute, rcl_send_response);
@@ -624,7 +728,11 @@ _rclc_execute(rclc_executor_handle_t * handle)
         break;
 
       case CLIENT:
-        handle->client_callback(handle->data, &handle->req_id);
+        if (handle->callback_type == CB_WITHOUT_REQUEST_ID) {
+          handle->client_callback(handle->data);
+        } else if (handle->callback_type == CB_WITH_REQUEST_ID) {
+          handle->client_callback_with_reqid(handle->data, &handle->req_id);
+        }
         break;
 
       case GUARD_CONDITION:

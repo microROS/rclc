@@ -268,6 +268,35 @@ rclc_executor_add_client(
   rclc_client_callback_t callback);
 
 /**
+ *  Adds a client to an executor.
+ * * An error is returned if {@link rclc_executor_t.handles} array is full.
+ * * The total number_of_clients field of {@link rclc_executor_t.info}
+ *   is incremented by one.
+ *
+ * <hr>
+ * Attribute          | Adherence
+ * ------------------ | -------------
+ * Allocates Memory   | No
+ * Thread-Safe        | No
+ * Uses Atomics       | No
+ * Lock-Free          | Yes
+ *
+ * \param [inout] executor pointer to initialized executor
+ * \param [in] client pointer to a allocated and initialized client
+ * \param [in] request_msg type-erased ptr to an allocated request message
+ * \param [in] callback    function pointer to a callback function with request_id
+ * \return `RCL_RET_OK` if add-operation was successful
+ * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
+ * \return `RCL_RET_ERROR` if any other error occured
+ */
+rcl_ret_t
+rclc_executor_add_client_with_request_id(
+  rclc_executor_t * executor,
+  rcl_client_t * client,
+  void * response_msg,
+  rclc_client_callback_with_request_id_t callback);
+
+/**
  *  Adds a service to an executor.
  * * An error is returned if {@link rclc_executor_t.handles} array is full.
  * * The total number_of_services field of {@link rclc_executor_t.info}
@@ -298,6 +327,36 @@ rclc_executor_add_service(
   void * response_msg,
   rclc_service_callback_t callback);
 
+/**
+ *  Adds a service to an executor.
+ * * An error is returned if {@link rclc_executor_t.handles} array is full.
+ * * The total number_of_services field of {@link rclc_executor_t.info}
+ *   is incremented by one.
+ *
+ * <hr>
+ * Attribute          | Adherence
+ * ------------------ | -------------
+ * Allocates Memory   | No
+ * Thread-Safe        | No
+ * Uses Atomics       | No
+ * Lock-Free          | Yes
+ *
+ * \param [inout] executor pointer to initialized executor
+ * \param [in] service pointer to an allocated and initialized service
+ * \param [in] request_msg type-erased ptr to an allocated request message
+ * \param [in] response_msg type-erased ptr to an allocated response message
+ * \param [in] callback    function pointer to a callback function with request_id
+ * \return `RCL_RET_OK` if add-operation was successful
+ * \return `RCL_RET_INVALID_ARGUMENT` if any parameter is a null pointer
+ * \return `RCL_RET_ERROR` if any other error occured
+ */
+rcl_ret_t
+rclc_executor_add_service_with_request_id(
+  rclc_executor_t * executor,
+  rcl_service_t * service,
+  void * request_msg,
+  void * response_msg,
+  rclc_service_callback_with_request_id_t callback);
 
 /**
  *  Adds a guard_condition to an executor.
