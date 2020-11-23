@@ -1,98 +1,30 @@
 name: CI RCLC
 
 on:
-    pull_request:
-      branches: 
-        - '**'
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    # Run once per day to detect broken dependencies.
+    - cron: '33 6 * * *'
 
 jobs:
-
-    rolling:
-        runs-on: ubuntu-20.04
-        container: ros:foxy
-
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            path: src/rmw-microxrcedds
-
-        - name: Download dependencies
-          run: |
-            apt update
-            apt install -y ros-rolling-desktop 
-            git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
-      
-        - name: Build
-          run: . /opt/ros/rolling/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
-
-        - name: Test
-          run: | 
-            . /opt/ros/rolling/setup.sh && . install/local_setup.sh 
-            colcon test
-            colcon test-result
-
-    foxy:
-        runs-on: ubuntu-20.04
-        container: ros:foxy
-    
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            path: src/rmw-microxrcedds
-
-        - name: Download dependencies
-          run: |
-            git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
-      
-        - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
-
-        - name: Test
-          run: | 
-            . /opt/ros/$ROS_DISTRO/setup.sh && . install/local_setup.sh 
-            colcon test
-            colcon test-result
-
-    eloquent:
-        runs-on: ubuntu-20.04
-        container: ros:eloquent
-    
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            path: src/rmw-microxrcedds
-
-        - name: Download dependencies
-          run: |
-            git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
-      
-        - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
-
-        - name: Test
-          run: | 
-            . /opt/ros/$ROS_DISTRO/setup.sh && . install/local_setup.sh 
-            colcon test
-            colcon test-result
-
-    dashing:
-        runs-on: ubuntu-20.04
-        container: ros:dashing
-    
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            path: src/rmw-microxrcedds
-
-        - name: Download dependencies
-          run: |
-            git clone -b foxy https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
-      
-        - name: Build
-          run: . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --cmake-args -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS="-Werror" 
-
-        - name: Test
-          run: | 
-            . /opt/ros/$ROS_DISTRO/setup.sh && . install/local_setup.sh 
-            colcon test
-            colcon test-result
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # os: [ ubuntu-20.04, windows-latest, macOS-latest ]
+        os: [ ubuntu-20.04 ]
+        ros_distribution: [ foxy, rolling ]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ros-tooling/setup-ros@0.0.26
+      with:
+        required-ros-distributions: ${{ matrix.ros_distribution }}
+    - uses : ros-tooling/action-ros-ci@0.1.0
+      with:
+        package-name: "rclc rclc_examples rclc_lifecycle"
+        vcs-repo-file-url: ""
+        target-ros2-distro: ${{ matrix.ros_distribution }}
