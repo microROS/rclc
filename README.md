@@ -38,7 +38,7 @@ For a list of other open source components included in rclc, see the file [3rd-p
 
 Please notice the following issues/limitations:
 
-*   rclc package support the communication types subscriptions and timers (services, clients and guard conditions are not supported yet)
+*   The rclc executor is single-threaded. You cannot create nodes in multiple threads and manage the corresponding subscriptions/services/etc. by one executor.
 
 ## Bloom Release Status of Code Repository ros2/rclc
 
