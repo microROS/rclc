@@ -46,6 +46,9 @@ ament_target_dependencies(example_client_node rcl rclc example_interfaces)
 add_executable(example_lifecycle_node src/example_lifecycle_node.c)
 ament_target_dependencies(example_lifecycle_node rcutils rcl rcl_lifecycle rclc rclc_lifecycle lifecycle_msgs)
 
+add_executable(example_executor src/example_pingpong.c)
+ament_target_dependencies(example_executor rcl rclc std_msgs)
+
 install(TARGETS
   example_executor
   example_executor_convenience
