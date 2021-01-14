@@ -37,17 +37,17 @@ jobs:
     - uses: ros-tooling/setup-ros@0.0.26
       with:
         required-ros-distributions: ${{ matrix.ros_distribution }}
-    #- name : Download rclc-dependencies
-    #  run: |
-    #    apt-get install ros-${{ matrix.ros_distribution }}-osrf-testing-tools-cpp
-    #    apt-get install ros-${{ matrix.ros_distribution }}-rcl-interfaces
-    #    apt-get install ros-${{ matrix.ros_distribution }}-test-interface-files
-
-    - name : Clone rclc-dependencies
+    - name : Download and install rclc-dependencies
       run: |
-        git clone https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
-        git clone -b ${{ matrix.ros_distribution }} https://github.com/ros2/rcl_interfaces.git src/rcl_interfaces
-        git clone -b ${{ matrix.ros_distribution }} https://github.com/ros2/test_interface_files.git src/test_interface_files
+        apt-get install ros-${{ matrix.ros_distribution }}-osrf-testing-tools-cpp
+        apt-get install ros-${{ matrix.ros_distribution }}-rcl-interfaces
+        apt-get install ros-${{ matrix.ros_distribution }}-test-interface-files
+
+    #- name : Clone rclc-dependencies
+    #  run: |
+    #    git clone https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
+    #    git clone -b ${{ matrix.ros_distribution }} https://github.com/ros2/rcl_interfaces.git src/rcl_interfaces
+    #    git clone -b ${{ matrix.ros_distribution }} https://github.com/ros2/test_interface_files.git src/test_interface_files
 
     - uses : ros-tooling/action-ros-ci@0.1.0
       with:
