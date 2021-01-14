@@ -41,7 +41,6 @@ jobs:
       run: |
         apt-get install ros-${{ matrix.ros_distribution }}-osrf-testing-tools-cpp
         apt-get install ros-${{ matrix.ros_distribution }}-test-msgs
-        apt-get install ros-${{ matrix.ros_distribution }}-test-interface-files
 
     - uses : ros-tooling/action-ros-ci@0.1.0
       with:
