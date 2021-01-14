@@ -45,7 +45,7 @@ jobs:
 
     - name : Clone rclc-dependencies
       run: |
-        git clone -b ${{ matrix.ros_distribution }} https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
+        git clone https://github.com/osrf/osrf_testing_tools_cpp src/osrf_testing_tools_cpp
         git clone -b ${{ matrix.ros_distribution }} https://github.com/ros2/rcl_interfaces.git src/rcl_interfaces
         git clone -b ${{ matrix.ros_distribution }} https://github.com/ros2/test_interface_files.git src/test_interface_files
 
