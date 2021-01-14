@@ -40,7 +40,7 @@ jobs:
     - name : Download and install rclc-dependencies
       run: |
         apt-get install ros-${{ matrix.ros_distribution }}-osrf-testing-tools-cpp
-        apt-get install ros-${{ matrix.ros_distribution }}-rcl-interfaces
+        apt-get install ros-${{ matrix.ros_distribution }}-test-msgs
         apt-get install ros-${{ matrix.ros_distribution }}-test-interface-files
 
     #- name : Clone rclc-dependencies
