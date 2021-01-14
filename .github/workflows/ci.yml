@@ -37,6 +37,7 @@ jobs:
     - uses: ros-tooling/setup-ros@0.0.26
       with:
         required-ros-distributions: ${{ matrix.ros_distribution }}
+    -run: apt-get install ros-${{ matrix.ros_distribution }}-osrf-testing-tools-cpp
     - uses : ros-tooling/action-ros-ci@0.1.0
       with:
         package-name: "rclc rclc_examples rclc_lifecycle"
